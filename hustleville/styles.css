@@ -124,4 +124,5 @@ b.g, .g { color: var(--green); } .bad { color: var(--red); } .dim { opacity: .45
 .avatar { overflow: hidden; }
 .avatar .art { border-radius: 0; }
 .desk { background: url(assets/runway/desk.png) center / cover no-repeat, repeating-linear-gradient(95deg, #5b3a1f 0 14px, #52341b 14px 28px), #4a2f18; }
-.title { background: linear-gradient(#0a1b30dd, #050d18f2), url(assets/runway/splash.png) center / cover no-repeat, radial-gradient(circle at 50% 30%, #16385c, #050d18); }
+.title.has-art { background: url(assets/runway/splash.png) center top / auto 100% no-repeat, linear-gradient(#13294d, #0a1730); justify-content: flex-end; padding-bottom: 9vh; }
+.title.has-art > img { display: none; } .title.has-art > p { display: none; }

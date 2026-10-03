@@ -31,6 +31,7 @@ const ART = {
   stages: { src: 'assets/runway/stages.png', cols: 4, rows: 2 }
 };
 function preloadArt() {
+  const sp = new Image(); sp.onload = () => $('title').classList.add('has-art'); sp.src = 'assets/runway/splash.png';
   Object.values(ART).forEach(a => {
     const im = new Image();
     im.onload = () => { a.ok = true; a.A = im.naturalWidth / im.naturalHeight; if (S && !$('title').classList.contains('open')) refresh(); };
