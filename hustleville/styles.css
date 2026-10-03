@@ -4,9 +4,11 @@
   --card: #ffffff12; --radius: 14px;
 }
 * { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; }
+:root { color-scheme: dark; }
 [hidden] { display: none !important; }
 body { font-family: Fredoka, system-ui, sans-serif; background: #050d18; color: var(--ink); display: flex; justify-content: center; }
-.game { position: relative; width: 100%; max-width: 440px; height: 100dvh; display: grid; grid-template-rows: auto auto 1fr auto auto;
+.game { position: relative; width: 100%; max-width: 440px; height: 100%; display: grid; grid-template-rows: auto auto 1fr auto auto;
         background: linear-gradient(var(--navy-2), var(--navy)); overflow: hidden; }
 b.g, .g { color: var(--green); } .bad { color: var(--red); } .dim { opacity: .45; }
 
