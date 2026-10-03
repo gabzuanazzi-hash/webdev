@@ -18,6 +18,39 @@ const fmt = (n) => {
 };
 const SAVE_KEY = 'hustleville-save-v1';
 
+/* ---------- Runway art (sprite sheets, optional) ----------
+   Drop the generated sheets into assets/runway/ with these names. Until a
+   sheet loads, the game falls back to emoji. */
+const ART = {
+  niches: { src: 'assets/runway/niches.png', cols: 5, rows: 2 },
+  home: { src: 'assets/runway/homes.png', cols: 4, rows: 2 },
+  car: { src: 'assets/runway/cars.png', cols: 3, rows: 2 },
+  clothes: { src: 'assets/runway/clothes.png', cols: 3, rows: 2 },
+  watch: { src: 'assets/runway/watches.png', cols: 3, rows: 2 },
+  plane: { src: 'assets/runway/planes.png', cols: 3, rows: 2 },
+  stages: { src: 'assets/runway/stages.png', cols: 4, rows: 2 }
+};
+function preloadArt() {
+  Object.values(ART).forEach(a => {
+    const im = new Image();
+    im.onload = () => { a.ok = true; a.A = im.naturalWidth / im.naturalHeight; if (S && !$('title').classList.contains('open')) refresh(); };
+    im.src = a.src;
+  });
+}
+// Renders the centered square of cell `idx` of a sheet at B px, or the fallback emoji.
+function art(key, idx, B, fb) {
+  const a = ART[key];
+  if (!a || !a.ok || idx == null || idx < 0) return fb;
+  const s = Math.min(a.A / a.cols, 1 / a.rows), k = B / s;
+  const cx = ((idx % a.cols) + 0.5) * a.A / a.cols, cy = (Math.floor(idx / a.cols) + 0.5) / a.rows;
+  return `<span class="art" style="width:${B}px;height:${B}px;background-image:url(${a.src});background-size:${a.A * k}px ${k}px;background-position:${B / 2 - cx * k}px ${B / 2 - cy * k}px"></span>`;
+}
+function stageIdx() {
+  if (!S.alive) return 7;
+  if (netWorth() >= 1e9 || S.fame >= 80) return 6;
+  const a = S.age; return a < 4 ? 0 : a < 13 ? 1 : a < 18 ? 2 : a < 30 ? 3 : a < 65 ? 4 : 5;
+}
+
 /* ---------- state ---------- */
 let S = null;
 const UI = { panel: null, sub: { money: 'jobs', crazy: 'crime' }, niche: 'fashion', filter: 'all', cat: 'home' };
@@ -311,7 +344,7 @@ function bar(label, v, cls) { return `<div class="sb"><label>${label}</label><di
 function refresh() {
   if (!S) return;
   const t = statusTitle();
-  $('avatar').textContent = stageIcon();
+  $('avatar').innerHTML = art('stages', stageIdx(), 46, stageIcon());
   $('pname').textContent = S.name;
   $('psub').textContent = `${S.flag} Age ${S.age} · ${occupation()}`;
   $('cash').textContent = fmt(S.cash);
@@ -364,17 +397,17 @@ function bizHTML() {
     S.biz.forEach((b, i) => {
       const d = BIZ[b.id]; const c = b.contract;
       const up = Math.round(d.cost * Math.pow(2, b.level - 1) * 1.5);
-      h += `<div class="card"><b>${d.icon} ${d.name}</b> <i class="tag">${d.online ? 'online' : 'offline'}</i><br><small>${d.nicheName} · ${d.modelName} · Level ${b.level}/10</small><br>Est. profit <b class="g">${fmt(bizEstimate(b))}/yr</b> · Value ${fmt(bizValue(b))}<br><small>📄 ${c.cp} · ${c.share}% share · ${b.termLeft > 0 ? b.termLeft + ' yr left' : '<b class="bad">EXPIRED</b>'}${c.excl ? ' · exclusive' : ''}${c.trapId && !c.trapStruck ? ' · ⚠️ fine print' : ''}</small><div class="btns">
+      h += `<div class="card"><b>${art('niches', NICHES.findIndex(n => n.id === d.niche), 24, d.icon)} ${d.name}</b> <i class="tag">${d.online ? 'online' : 'offline'}</i><br><small>${d.nicheName} · ${d.modelName} · Level ${b.level}/10</small><br>Est. profit <b class="g">${fmt(bizEstimate(b))}/yr</b> · Value ${fmt(bizValue(b))}<br><small>📄 ${c.cp} · ${c.share}% share · ${b.termLeft > 0 ? b.termLeft + ' yr left' : '<b class="bad">EXPIRED</b>'}${c.excl ? ' · exclusive' : ''}${c.trapId && !c.trapStruck ? ' · ⚠️ fine print' : ''}</small><div class="btns">
         <button class="btn sm gold" ${b.level < 10 && S.cash >= up ? '' : 'disabled'} data-a="upgrade" data-v="${i}">⬆️ Level up ${b.level < 10 ? fmt(up) : 'MAX'}</button>
         <button class="btn sm" data-a="renew" data-v="${i}">📄 ${b.termLeft > 0 ? 'Re-negotiate' : 'Renew'}</button>
         <button class="btn sm" data-a="sell" data-v="${i}">Sell ${fmt(bizValue(b) * 0.8)}</button></div></div>`;
     });
   }
-  h += '<h5>Start a business — pick a niche</h5><div class="chips">' + NICHES.map(n => `<button class="${UI.niche === n.id ? 'on' : ''}" data-a="niche" data-v="${n.id}">${n.icon}<small>${n.n}</small></button>`).join('') + '</div>';
+  h += '<h5>Start a business — pick a niche</h5><div class="chips">' + NICHES.map(n => `<button class="${UI.niche === n.id ? 'on' : ''}" data-a="niche" data-v="${n.id}">${art('niches', NICHES.indexOf(n), 34, n.icon)}<small>${n.n}</small></button>`).join('') + '</div>';
   h += `<div class="chips f">${['all', 'online', 'offline'].map(f => `<button class="${UI.filter === f ? 'on' : ''}" data-a="filter" data-v="${f}">${f}</button>`).join('')}</div>`;
   Object.keys(MODELS).map(m => BIZ[UI.niche + ':' + m]).filter(d => UI.filter === 'all' || (UI.filter === 'online') === d.online).forEach(d => {
     const owned = S.biz.some(b => b.id === d.id);
-    h += `<div class="row"><span class="ic">${d.icon}</span><div class="grow"><b>${d.name}</b> <i class="tag">${d.online ? 'online' : 'offline'}</i><small>${d.modelName} · startup ${fmt(d.cost)} · ~${fmt(d.baseProfit)}/yr</small></div><button class="btn sm gold" ${owned || S.cash < d.cost || S.age < 16 || S.jail || S.biz.length >= 12 ? 'disabled' : ''} data-a="start" data-v="${d.id}">${owned ? 'Owned' : '✍️ Sign'}</button></div>`;
+    h += `<div class="row"><span class="ic">${art('niches', NICHES.findIndex(n => n.id === d.niche), 44, d.icon)}</span><div class="grow"><b>${d.name}</b> <i class="tag">${d.online ? 'online' : 'offline'}</i><small>${d.modelName} · startup ${fmt(d.cost)} · ~${fmt(d.baseProfit)}/yr</small></div><button class="btn sm gold" ${owned || S.cash < d.cost || S.age < 16 || S.jail || S.biz.length >= 12 ? 'disabled' : ''} data-a="start" data-v="${d.id}">${owned ? 'Owned' : '✍️ Sign'}</button></div>`;
   });
   if (S.age < 16) h += '<div class="note">You must be 16+ to sign contracts.</div>';
   return h;
@@ -383,10 +416,10 @@ function bizHTML() {
 function assetsHTML() {
   let h = '<div class="chips f">' + Object.keys(ASSETS).map(k => `<button class="${UI.cat === k ? 'on' : ''}" data-a="cat" data-v="${k}">${ASSETS[k].icon} ${ASSETS[k].label}</button>`).join('') + '</div>';
   const owned = S.assets.map((a, i) => ({ a, i })).filter(x => x.a.cat === UI.cat);
-  if (owned.length) h += '<h5>You own</h5>' + owned.map(({ a, i }) => `<div class="row"><span class="ic">${a.icon}</span><div class="grow"><b>${a.n}</b><small>Worth ${fmt(a.value)}${a.up ? ' · upkeep ' + fmt(a.price * a.up) + '/yr' : ''}</small></div><button class="btn sm" data-a="sellAsset" data-v="${i}">Sell</button></div>`).join('');
+  if (owned.length) h += '<h5>You own</h5>' + owned.map(({ a, i }) => `<div class="row"><span class="ic">${art(a.cat, a.idx, 44, a.icon)}</span><div class="grow"><b>${a.n}</b><small>Worth ${fmt(a.value)}${a.up ? ' · upkeep ' + fmt(a.price * a.up) + '/yr' : ''}</small></div><button class="btn sm" data-a="sellAsset" data-v="${i}">Sell</button></div>`).join('');
   h += '<h5>Shop</h5>';
   ASSETS[UI.cat].items.forEach((it, i) => {
-    h += `<div class="row"><span class="ic">${it.icon}</span><div class="grow"><b>${it.n}</b><small>${fmt(it.price)}${it.up ? ' · upkeep ' + fmt(it.price * it.up) + '/yr' : ''}${it.looks ? ' · +' + it.looks + ' looks' : ''}</small></div><button class="btn sm gold" ${S.cash >= it.price && !S.jail ? '' : 'disabled'} data-a="buy" data-v="${i}">Buy</button></div>`;
+    h += `<div class="row"><span class="ic">${art(UI.cat, i, 44, it.icon)}</span><div class="grow"><b>${it.n}</b><small>${fmt(it.price)}${it.up ? ' · upkeep ' + fmt(it.price * it.up) + '/yr' : ''}${it.looks ? ' · +' + it.looks + ' looks' : ''}</small></div><button class="btn sm gold" ${S.cash >= it.price && !S.jail ? '' : 'disabled'} data-a="buy" data-v="${i}">Buy</button></div>`;
   });
   return h;
 }
@@ -457,7 +490,7 @@ const A = {
   },
   buy(i) {
     const it = ASSETS[UI.cat].items[i]; if (S.cash < it.price) return;
-    S.cash -= it.price; S.assets.push({ cat: UI.cat, n: it.n, icon: it.icon, price: it.price, up: it.up, dep: it.dep, value: it.price });
+    S.cash -= it.price; S.assets.push({ cat: UI.cat, idx: i, n: it.n, icon: it.icon, price: it.price, up: it.up, dep: it.dep, value: it.price });
     S.happy = clamp(S.happy + it.happy); S.fame += it.fame || 0; S.looks = clamp(S.looks + (it.looks || 0));
     say(it.icon, `You bought a ${it.n} for ${fmt(it.price)}.`, 'gold'); checkAch(); save(); refresh(); renderFeed();
   },
@@ -618,3 +651,4 @@ $('sheetClose').addEventListener('click', closePanel);
 $('btnNew').addEventListener('click', () => { newLife(); $('title').classList.remove('open'); renderFeed(); refresh(); });
 $('btnCont').addEventListener('click', () => { $('title').classList.remove('open'); renderFeed(); refresh(); });
 if (load() && S.alive) $('btnCont').hidden = false;
+preloadArt();

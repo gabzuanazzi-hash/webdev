@@ -115,3 +115,11 @@ b.g, .g { color: var(--green); } .bad { color: var(--red); } .dim { opacity: .45
 @keyframes stamp { to { transform: rotate(-14deg) scale(1); opacity: .9; } }
 .deskbar { position: sticky; bottom: 0; margin: auto -12px 0; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: #120a04; font-size: .8rem; display: flex; flex-direction: column; gap: 8px; }
 .deskbar .btns { margin: 0; } .deskbar .btn { flex: 1; }
+
+/* Runway art (optional sprites; fallbacks are emoji / gradients) */
+.art { display: inline-block; border-radius: 10px; background-repeat: no-repeat; vertical-align: middle; flex: none; }
+.chips button .art { display: block; margin: 0 auto 2px; }
+.avatar { overflow: hidden; }
+.avatar .art { border-radius: 0; }
+.desk { background: url(assets/runway/desk.png) center / cover no-repeat, repeating-linear-gradient(95deg, #5b3a1f 0 14px, #52341b 14px 28px), #4a2f18; }
+.title { background: linear-gradient(#0a1b30dd, #050d18f2), url(assets/runway/splash.png) center / cover no-repeat, radial-gradient(circle at 50% 30%, #16385c, #050d18); }
