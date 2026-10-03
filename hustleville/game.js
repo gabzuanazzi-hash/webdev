@@ -465,8 +465,8 @@ function bizHTML() {
       const H = HUBS[b.id], c = b.contract, up = Math.round(H.cost * Math.pow(2, b.level - 1) * 1.5);
       h += `<div class="bcard"><div class="btile">${art('hubs', H.sprite, 56, H.icon)}<em>Lvl ${b.level}</em></div>
         <div class="binfo"><b>${H.name}</b><div class="inc"><i class="coin-ic s">$</i>${b.last ? fmt(b.last.profit) + ' last year' : 'New business'}</div>
-        <small>⚡ ${b.ap}/${apMax(b)} actions left · 📄 ${c.cp} · ${c.share}% · ${b.termLeft > 0 ? b.termLeft + ' yr left' : '<b class="bad">EXPIRED</b>'}${c.trapId && !c.trapStruck ? ' · ⚠️ fine print' : ''}</small></div>
-        <button class="gbtn" data-a="openHub" data-v="${i}">OPEN HUB<small>⚡ ${b.ap}</small></button>
+        <small>${ENERGY_ON ? '⚡ ' + b.ap + '/' + apMax(b) + ' actions left · ' : ''}📄 ${c.cp} · ${c.share}% · ${b.termLeft > 0 ? b.termLeft + ' yr left' : '<b class="bad">EXPIRED</b>'}${c.trapId && !c.trapStruck ? ' · ⚠️ fine print' : ''}</small></div>
+        <button class="gbtn" data-a="openHub" data-v="${i}">OPEN HUB${ENERGY_ON ? '<small>⚡ ' + b.ap + '</small>' : ''}</button>
         <div class="bmini"><button class="mini" ${b.level < 10 && S.cash >= up ? '' : 'disabled'} data-a="upgrade" data-v="${i}">⬆️ Level up ${b.level < 10 ? fmt(up) : 'MAX'}</button><button class="mini" data-a="renew" data-v="${i}">📄 ${b.termLeft > 0 ? 'Re-negotiate' : 'Renew'}</button><button class="mini" data-a="sell" data-v="${i}">Sell ${fmt(bizValue(b) * 0.8)}</button></div></div>`;
     });
   }
@@ -484,15 +484,15 @@ function hubHTML(i) {
   const b = S.biz[i], H = HUBS[b.id], defs = H.defs(b), mx = apMax(b);
   const mets = H.metrics(b).map(m => `<div class="mt"><label>${m.l}</label><div class="bar"><i style="width:${clamp(m.p)}%;background:${hcol(m.p)}"></i></div><b>${m.v}</b></div>`).join('');
   const tasks = H.list.map(id => {
-    const d = defs[id](), why = d.why || (b.ap < d.ap ? 'No actions left' : S.cash < d.cost ? 'Need ' + fmt(d.cost) : '');
-    return `<button class="task" ${why ? 'disabled' : ''} data-a="hubTask" data-v="${i}:${id}"><span class="ti">${d.icon}</span><b>${d.t}</b><small>${d.d}</small><em>${why || '⚡' + d.ap + (d.cost ? ' · ' + fmt(d.cost) : ' · free')}</em></button>`;
+    const d = defs[id](), why = d.why || (!canAp(b.ap, d.ap) ? 'No actions left' : S.cash < d.cost ? 'Need ' + fmt(d.cost) : '');
+    return `<button class="task" ${why ? 'disabled' : ''} data-a="hubTask" data-v="${i}:${id}"><span class="ti">${d.icon}</span><b>${d.t}</b><small>${d.d}</small><em>${why || (apTag(d.ap) + (d.cost ? (ENERGY_ON ? ' · ' : '') + fmt(d.cost) : (ENERGY_ON ? ' · free' : 'free')))}</em></button>`;
   }).join('');
   const L = b.last;
   return `<button class="back" data-a="closeHub">← All businesses</button>
     ${bannerHTML('hubs', H.banner)}
-    <div class="hubhead"><div><b>${H.icon} ${H.name}</b> <i class="tag">Lvl ${b.level}</i><small>${H.blurb}</small></div><div class="aps">${apPips(b.ap, mx)}<small>actions left this year</small></div></div>
+    <div class="hubhead"><div><b>${H.icon} ${H.name}</b> <i class="tag">Lvl ${b.level}</i><small>${H.blurb}</small></div>${ENERGY_ON ? `<div class="aps">${apPips(b.ap, mx)}<small>actions left this year</small></div>` : ''}</div>
     <div class="metrics">${mets}</div>
-    <button class="btn big teal" ${b.ap < 1 ? 'disabled' : ''} data-a="hubPhone" data-v="${i}">📞 Take a call (⚡1)</button>
+    <button class="btn big teal" ${!canAp(b.ap, 1) ? 'disabled' : ''} data-a="hubPhone" data-v="${i}">📞 Take a call${ENERGY_ON ? ' (⚡1)' : ''}</button>
     <h5>Tasks</h5><div class="tasks">${tasks}</div>
     ${H.extra(b, i)}
     <h5>Last year</h5>${L ? `<div class="card ${L.profit >= 0 ? 'gold' : ''}"><b>${L.profit >= 0 ? 'Profit' : 'Loss'} ${fmt(L.profit)}</b><small>Revenue ${fmt(L.rev)} · Costs ${fmt(L.exp)}</small>${L.notes.map(n => `<small>• ${n}</small>`).join('')}</div>` : '<div class="note">Age up to see your first year results. Your tasks decide them.</div>'}
@@ -588,12 +588,12 @@ const A = {
   hubTask(v) {
     const [i, id, arg] = v.split(':'), b = S.biz[+i]; if (!b) return;
     const mk = HUBS[b.id].defs(b)[id]; if (!mk) return;
-    const d = mk(arg); if (d.why || b.ap < d.ap || S.cash < d.cost) return;
-    b.ap -= d.ap; S.cash -= d.cost; S.done.hub = true;
+    const d = mk(arg); if (d.why || !canAp(b.ap, d.ap) || S.cash < d.cost) return;
+    if (ENERGY_ON) b.ap -= d.ap; S.cash -= d.cost; S.done.hub = true;
     const msg = d.run(); if (msg) { hlog(b, msg); toast(msg); }
     S.fame = Math.max(S.fame, socialFame()); save(); refresh();
   },
-  hubPhone(i) { const b = S.biz[+i]; if (!b || b.ap < 1) return; b.ap--; S.done.hub = true; hubCall(b); },
+  hubPhone(i) { const b = S.biz[+i]; if (!b || !canAp(b.ap, 1)) return; if (ENERGY_ON) b.ap--; S.done.hub = true; hubCall(b); },
   upgrade(i) {
     const b = S.biz[i], H = HUBS[b.id], up = Math.round(H.cost * Math.pow(2, b.level - 1) * 1.5);
     if (S.cash < up || b.level >= 10) return; S.cash -= up; b.level++; b.ap += 1; S.done.upg = true; S.xp += 10 * b.level;

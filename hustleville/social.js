@@ -227,15 +227,15 @@ function socialHTML() {
   const head = `${bannerHTML('social', 0, 'social')}
     <div class="stats3"><div><b>${fmtN(F)}</b><small>followers</small></div><div><b>${socialTitle()}</b><small>${s.celeb ? '⭐ celebrity' : 'status'}</small></div><div><b>${mood[0]}</b><small>${mood[1]}</small></div></div>
     <div class="sb"><label>Reputation</label><div class="bar"><i style="width:${s.rep}%;background:${hcol(s.rep)}"></i></div><b>${Math.round(s.rep)}</b></div>
-    <small class="meta">Trend this year: <b>#${s.trend}</b> · Actions left ${apPips(s.ap, socialApMax())}${s.cancelled ? ' · <b class="bad">cancelled</b>' : ''}</small>
+    <small class="meta">Trend this year: <b>#${s.trend}</b> ${ENERGY_ON ? ' · Actions left ' + apPips(s.ap, socialApMax()) : ''}${s.cancelled ? ' · <b class="bad">cancelled</b>' : ''}</small>
     ${tabs('social', [['post', '📸 Post'], ['deals', '💼 Deals' + (s.offers.length ? ' (' + s.offers.length + ')' : '')], ['celeb', '⭐ Celebrity']])}`;
   return head + ({ post: postHTML, deals: dealsHTML, celeb: celebHTML }[sub])();
 }
 function postHTML() {
   const s = S.social, hasDeal = s.deals.some(d => d.done < d.posts);
   let h = '<div class="agrid">' + POSTS.map(p => {
-    const why = s.ap < 1 ? 'No actions left' : p.needsDeal && !hasDeal ? 'Needs a deal' : p.cost && S.cash < p.cost ? 'Need ' + fmt(p.cost) : '';
-    return `<div class="acard"><span class="ai">${p.icon}</span><b>${p.t}</b><small>${p.d}</small><button class="gbtn sm" ${why ? 'disabled' : ''} data-a="post" data-v="${p.id}">${why || 'POST ⚡1' + (p.cost ? ' · ' + fmt(p.cost) : '')}</button></div>`;
+    const why = !canAp(s.ap, 1) ? 'No actions left' : p.needsDeal && !hasDeal ? 'Needs a deal' : p.cost && S.cash < p.cost ? 'Need ' + fmt(p.cost) : '';
+    return `<div class="acard"><span class="ai">${p.icon}</span><b>${p.t}</b><small>${p.d}</small><button class="gbtn sm" ${why ? 'disabled' : ''} data-a="post" data-v="${p.id}">${why || 'POST' + (ENERGY_ON ? ' ⚡1' : '') + (p.cost ? ' · ' + fmt(p.cost) : '')}</button></div>`;
   }).join('') + '</div>';
   h += '<h5>Your recent posts</h5>';
   h += s.posts.length ? s.posts.map(p => `<div class="post ${p.viral ? 'viral' : ''}"><span class="pi">${p.icon}</span><div><b>${p.cap}</b><small>👍 ${fmtN(p.likes)} · 💬 ${fmtN(p.comments)} · ➕ ${fmtN(p.newF)}${p.viral ? ' · 🔥 VIRAL' : ''}${p.flop ? ' · 💤 flopped' : ''}${p.cancelled ? ' · 🚫 cancelled' : ''}</small></div></div>`).join('') : '<div class="note">No posts yet. Fame is a lottery: most posts do little, a few explode.</div>';
@@ -253,8 +253,8 @@ function celebHTML() {
   if (!s.celeb) return `<div class="note">The Celebrity page unlocks at 1,000,000 followers. You have ${fmtN(s.followers)}.</div>` + storyHTML();
   let h = `${bannerHTML('social', 1, 'celeb')}<h5>Your entourage</h5>` + TEAM.map(t => `<div class="row"><span class="ic">${t.icon}</span><div class="grow"><b>${t.t}</b><small>${t.d} · ${fmt(teamCost(t))}/yr</small></div><button class="btn sm ${s.team[t.id] ? '' : 'gold'}" data-a="team" data-v="${t.id}">${s.team[t.id] ? 'Fire' : 'Hire'}</button></div>`).join('');
   h += '<h5>Celebrity actions</h5><div class="agrid">' + CELEB_TASKS.map(t => {
-    const cost = t.cost(), why = s.ap < t.ap ? 'No actions left' : t.why() || (S.cash < cost ? 'Need ' + fmt(cost) : '');
-    return `<div class="acard"><span class="ai">${t.icon}</span><b>${t.t}</b><small>${t.d}</small><button class="gbtn sm" ${why ? 'disabled' : ''} data-a="celebTask" data-v="${t.id}">${why || '⚡' + t.ap + (cost ? ' · ' + fmt(cost) : '')}</button></div>`;
+    const cost = t.cost(), why = !canAp(s.ap, t.ap) ? 'No actions left' : t.why() || (S.cash < cost ? 'Need ' + fmt(cost) : '');
+    return `<div class="acard"><span class="ai">${t.icon}</span><b>${t.t}</b><small>${t.d}</small><button class="gbtn sm" ${why ? 'disabled' : ''} data-a="celebTask" data-v="${t.id}">${why || (apTag(t.ap) + (cost ? (ENERGY_ON ? ' · ' : '') + fmt(cost) : (ENERGY_ON ? '' : 'GO')))}</button></div>`;
   }).join('') + '</div>';
   return h + `<small class="meta">Merch level ${s.merch}/5 · tour ${s.tour ? 'booked' : 'not planned'}</small>` + storyHTML();
 }
@@ -266,10 +266,10 @@ function storyHTML() {
 /* ---------- actions (merged into A in game.js) ---------- */
 const SA = {
   post(id) {
-    const s = S.social, T = POSTS.find(p => p.id === id); if (!T || s.ap < 1) return;
+    const s = S.social, T = POSTS.find(p => p.id === id); if (!T || !canAp(s.ap, 1)) return;
     if (T.needsDeal && !s.deals.some(d => d.done < d.posts)) return;
     if (T.cost) { if (S.cash < T.cost) return; S.cash -= T.cost; }
-    s.ap--; const r = doPost(id);
+    if (ENERGY_ON) s.ap--; const r = doPost(id);
     say(T.icon, r.out, r.viral ? 'gold' : r.cancelled ? 'bad' : ''); toast(r.out);
     storyBeats(); checkAch(); save(); refresh(); renderFeed();
   },
@@ -286,8 +286,8 @@ const SA = {
   },
   celebTask(id) {
     const t = CELEB_TASKS.find(x => x.id === id), s = S.social, cost = t.cost();
-    if (s.ap < t.ap || S.cash < cost || t.why()) return;
-    s.ap -= t.ap; S.cash -= cost; const m = t.run(); say(t.icon, m, 'gold'); toast(m);
+    if (!canAp(s.ap, t.ap) || S.cash < cost || t.why()) return;
+    if (ENERGY_ON) s.ap -= t.ap; S.cash -= cost; const m = t.run(); say(t.icon, m, 'gold'); toast(m);
     S.fame = Math.max(S.fame, socialFame()); storyBeats(); save(); refresh(); renderFeed();
   }
 };

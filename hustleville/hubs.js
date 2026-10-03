@@ -5,7 +5,11 @@
 
 const HUBS = {};
 const hsc = (b) => Math.pow(1.5, b.level - 1);          // scale with level
+// Energy (action points) is switched off for now: every task is unlimited. Set to true to bring it back.
+const ENERGY_ON = false;
 const apMax = (b) => Math.min(12, 5 + b.level);
+const canAp = (have, need) => !ENERGY_ON || have >= need;
+const apTag = (n) => ENERGY_ON ? '⚡' + n : '';
 const hlog = (b, m) => { b.log = b.log || []; b.log.unshift(m); b.log.length = Math.min(b.log.length, 10); };
 const hcol = (p) => p >= 66 ? '#4cc65a' : p >= 40 ? '#f5c542' : '#ff5d5d';
 const num = (n) => Math.round(n).toLocaleString();
@@ -362,7 +366,7 @@ HUBS.agency = {
   extra(b, i) {
     const h = b.hub, H = HUBS.agency; let out = '';
     if (h.prospects.length) {
-      out += '<h5>Prospects</h5>' + h.prospects.map((c, k) => `<div class="row"><span class="ic">🙋</span><div class="grow"><b>${c.name}</b><small>${c.niche} · ${num(c.followers)} followers · ${c.pers} · quality ${c.quality}</small></div><button class="btn sm gold" data-a="hubTask" data-v="${i}:pitch:${k}">Pitch ⚡1</button></div>`).join('');
+      out += '<h5>Prospects</h5>' + h.prospects.map((c, k) => `<div class="row"><span class="ic">🙋</span><div class="grow"><b>${c.name}</b><small>${c.niche} · ${num(c.followers)} followers · ${c.pers} · quality ${c.quality}</small></div><button class="btn sm gold" data-a="hubTask" data-v="${i}:pitch:${k}">Pitch ${apTag(1)}</button></div>`).join('');
     }
     out += `<h5>Your creators (${h.creators.length}/${H.max(b)})</h5>`;
     if (!h.creators.length) out += '<div class="note">No creators yet. Scout some, then pitch them a fair offer. They can say no.</div>';
@@ -375,7 +379,7 @@ HUBS.agency = {
         <div class="sb"><label>Quality</label><div class="bar"><i style="width:${c.quality}%;background:${hcol(c.quality)}"></i></div><b>${Math.round(c.quality)}</b></div>
         <div class="btns">${btn('calendar', '📅', 'Content calendar')}${btn('shoot', '🎬', 'Fund a shoot ($)')}${btn('promo', '📣', 'Cross-promote ($)')}${btn('wellness', '🫶', 'Wellness check-in')}${btn('protect', '🛡️', 'Privacy sweep ($)')}${btn('rest', '🏖️', 'Give a break')}${btn('split', '📝', 'Improve split')}
         ${[5, 10, 15, 25].map(p => `<button class="mini ${c.price === p ? 'on' : ''}" data-a="hubTask" data-v="${i}:price:${k}/${p}">$${p}</button>`).join('')}${btn('release', '👋', 'Part ways')}</div>
-        <small>⚡1 each. 🎬 and 📣 cost money.</small></div>`;
+        <small>${ENERGY_ON ? '⚡1 each. ' : ''}🎬 and 📣 cost money.</small></div>`;
     });
     return out;
   },
