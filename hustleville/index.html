@@ -4,79 +4,59 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hustleville</title>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --navy: #0a1b30; --navy-2: #0f2a47; --teal: #18b8a6; --mint: #7fe3d6;
-    --gold: #ffc83d; --gold-d: #e8962a; --coral: #ff7a59; --green: #4cc65a; --ink: #eaf6ff;
-  }
-  * { box-sizing: border-box; margin: 0; }
-  body { font-family: Fredoka, system-ui, sans-serif; background: #050d18; color: var(--ink);
-         display: flex; justify-content: center; min-height: 100vh; }
-  .game { width: 100%; max-width: 420px; min-height: 100vh; display: grid;
-          grid-template-rows: auto auto 1fr auto; background: linear-gradient(var(--navy-2), var(--navy)); }
-  header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; }
-  header img { height: 44px; }
-  .cash { margin-left: auto; font-size: 1.5rem; font-weight: 700; color: var(--gold); }
-  .cash small { display: block; font-size: .65rem; color: var(--mint); text-align: right; font-weight: 500; }
-  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 0 16px 8px; }
-  .stat { background: #ffffff10; border-radius: 12px; padding: 8px; font-size: .75rem; }
-  .bar { height: 6px; border-radius: 3px; background: #ffffff20; margin-top: 6px; overflow: hidden; }
-  .bar i { display: block; height: 100%; }
-  main { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 16px; }
-  .coin { width: 200px; height: 200px; border-radius: 50%; border: 8px solid var(--navy); cursor: pointer;
-          background: radial-gradient(circle at 40% 35%, #fff3a8, var(--gold) 55%, var(--gold-d));
-          font: 700 5rem Fredoka, sans-serif; color: #b86e00; box-shadow: 0 10px 0 #9a5f10, 0 0 50px #ffc83d55;
-          transition: transform .08s, box-shadow .08s; }
-  .coin:active { transform: translateY(8px); box-shadow: 0 2px 0 #9a5f10, 0 0 50px #ffc83d55; }
-  .perclick { color: var(--mint); font-size: .9rem; }
-  .world { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
-  .card { background: #ffffff10; border: 2px solid #ffffff18; border-radius: 16px; padding: 12px; min-height: 84px; }
-  .card h3 { font-size: .95rem; } .card p { font-size: .75rem; color: var(--mint); margin-top: 4px; }
-  .card.biz { border-color: var(--teal); } .card.life { border-color: var(--coral); }
-  nav { display: grid; grid-template-columns: repeat(5, 1fr); background: #050d18; padding: 8px 4px 12px; }
-  nav button { background: none; border: 0; color: var(--ink); font: 500 .7rem Fredoka, sans-serif; opacity: .7; cursor: pointer; }
-  nav button.on { opacity: 1; color: var(--gold); }
-  nav span { display: block; font-size: 1.4rem; }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="game">
-  <header>
-    <img src="assets/logo.svg" alt="Hustleville">
-    <div class="cash" id="cash">$0<small>+$1 / click</small></div>
+
+  <header class="hud">
+    <button class="icon-btn" aria-label="Settings">⚙️</button>
+    <img class="wordmark" src="assets/wordmark.svg" alt="Hustleville">
+    <div class="chip gem">💎 <b id="gems">25</b></div>
   </header>
 
-  <section class="stats" aria-label="Life stats">
-    <div class="stat">Career<div class="bar"><i style="width:30%;background:var(--teal)"></i></div></div>
-    <div class="stat">Wealth<div class="bar"><i style="width:15%;background:var(--gold)"></i></div></div>
-    <div class="stat">Health<div class="bar"><i style="width:70%;background:var(--green)"></i></div></div>
-    <div class="stat">Love<div class="bar"><i style="width:45%;background:var(--coral)"></i></div></div>
+  <section class="profile">
+    <div class="avatar" aria-hidden="true">🧑‍💼</div>
+    <div class="who">
+      <strong>Alex Rivera</strong>
+      <span>Age 19 · Coffee Cart Owner</span>
+      <div class="xp"><i style="width:42%"></i></div>
+    </div>
+    <div class="cash">
+      <b id="cash">$12,480</b>
+      <small id="rate">+$1 / tap · $3 / s</small>
+    </div>
   </section>
 
-  <main>
-    <button class="coin" id="coin" aria-label="Hustle">$</button>
-    <div class="perclick">Tap to hustle</div>
-    <div class="world">
-      <div class="card biz"><h3>Business</h3><p>Lemonade stand · Lv 1</p></div>
-      <div class="card life"><h3>Life</h3><p>Studio flat · Lv 1</p></div>
+  <main class="town">
+    <aside class="meters" aria-label="Life meters">
+      <div class="meter" style="--v:62;--c:var(--teal)"><span>💼</span><em>Career</em></div>
+      <div class="meter" style="--v:35;--c:var(--gold)"><span>🪙</span><em>Wealth</em></div>
+      <div class="meter" style="--v:80;--c:var(--green)"><span>💚</span><em>Health</em></div>
+      <div class="meter" style="--v:55;--c:var(--coral)"><span>❤️</span><em>Love</em></div>
+    </aside>
+
+    <div class="diorama" aria-hidden="true">
+      <div class="tower"></div><div class="shop"></div><div class="home"></div><div class="tree"></div>
     </div>
+    <button class="coin" id="coin" aria-label="Hustle: tap to earn">$</button>
   </main>
 
-  <nav>
+  <section class="feed" id="feed" aria-live="polite">
+    <article class="event"><span>🤝</span><p>Closed a deal at the cafe <b class="plus">+$250</b></p></article>
+    <article class="event"><span>🏃</span><p>Went for a morning jog <b class="plus">+Health</b></p></article>
+    <article class="event"><span>🎓</span><p>Finished an online course <b class="plus">+Career</b></p></article>
+  </section>
+
+  <nav class="tabs">
     <button class="on"><span>💼</span>Business</button>
     <button><span>🏡</span>Life</button>
-    <button><span>⬆️</span>Upgrades</button>
+    <button class="go" id="go" aria-label="Hustle"><span>⚡</span>HUSTLE</button>
+    <button><span>🚀</span>Upgrades</button>
     <button><span>🛍️</span>Shop</button>
-    <button><span>🎯</span>Goals</button>
   </nav>
 </div>
-<script>
-  let cash = 0;
-  document.getElementById('coin').addEventListener('click', () => {
-    cash += 1;
-    document.getElementById('cash').firstChild.textContent = '$' + cash.toLocaleString();
-  });
-</script>
+<script src="game.js"></script>
 </body>
 </html>
