@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Hustleville</title>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Special+Elite&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Lilita+One&family=Special+Elite&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,39 +12,50 @@
 
   <header class="hud">
     <img class="wordmark" src="assets/wordmark.svg" alt="Hustleville">
-    <div class="nw" id="nw"></div>
+    <div class="pills">
+      <div class="pill"><i class="coin-ic">$</i><b id="cash">$0</b></div>
+      <div class="pill lv">👑 <b id="hudLvl">1</b></div>
+      <button class="gear" id="btnGear" aria-label="Settings and status">⚙️</button>
+    </div>
   </header>
 
   <section class="profile">
     <div class="avatar" id="avatar">👶</div>
     <div class="who"><strong id="pname"></strong><span id="psub"></span></div>
-    <div class="cash"><b id="cash">$0</b><small>cash</small></div>
+    <div class="nw" id="nw"></div>
   </section>
 
   <div class="stage">
-    <section class="feed" id="feed" aria-live="polite"></section>
+    <div class="home">
+      <button class="hero" id="hero" aria-label="Tap the coin to earn">
+        <span class="hero-art"></span>
+        <span class="fcoin">$</span>
+      </button>
+      <div class="lower">
+        <section class="feed" id="feed" aria-live="polite"></section>
+        <aside class="meters" id="meters" aria-label="Life meters"></aside>
+      </div>
+    </div>
     <section class="sheet" id="sheet">
-      <div class="sheet-head"><b id="sheetTitle"></b><button class="x" id="sheetClose" aria-label="Close">✕</button></div>
+      <div class="sheet-head"><b id="sheetTitle"></b><button class="xbtn" id="sheetClose" aria-label="Close">✕</button></div>
       <div class="sheet-body" id="sheetBody"></div>
     </section>
   </div>
 
-  <section class="stats" id="stats"></section>
-
   <nav class="tabs">
     <button data-p="money"><span>💰</span>Money</button>
     <button data-p="love"><span>❤️</span>Love</button>
-    <button class="age" id="ageBtn" aria-label="Age one year"><span>＋</span>AGE</button>
+    <button class="age" id="ageBtn" aria-label="Age one year"><b>AGE</b><small>+1 year</small></button>
     <button data-p="crazy"><span>😈</span>Crazy</button>
     <button data-p="status"><span>👑</span>Status</button>
   </nav>
 </div>
 
-<!-- generic modal -->
+<!-- generic modal / events -->
 <div class="overlay" id="modal">
   <div class="modal">
-    <div class="m-icon" id="modalIcon"></div>
     <h3 id="modalTitle"></h3>
+    <div class="m-icon" id="modalIcon"></div>
     <p id="modalText"></p>
     <div class="m-btns" id="modalBtns"></div>
   </div>

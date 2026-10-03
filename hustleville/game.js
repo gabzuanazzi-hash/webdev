@@ -32,6 +32,7 @@ const ART = {
 };
 function preloadArt() {
   const sp = new Image(); sp.onload = () => $('title').classList.add('has-art'); sp.src = 'assets/runway/splash.png';
+  const hr = new Image(); hr.onload = () => { $('hero').classList.add('has-art'); document.body.classList.add('ui-art'); if (S && !$('title').classList.contains('open')) refresh(); }; hr.src = 'assets/runway/ui/hero.png';
   Object.values(ART).forEach(a => {
     const im = new Image();
     im.onload = () => { a.ok = true; a.A = im.naturalWidth / im.naturalHeight; if (S && !$('title').classList.contains('open')) refresh(); };
@@ -72,11 +73,12 @@ function newLife() {
     job: null, jobYears: 0, deg: false, college: null,
     biz: [], assets: [], invest: { savings: 0, index: 0, crypto: 0 },
     candidate: null, partner: null, kids: [], mom, dad,
-    jail: 0, record: 0, heat: 0, done: {}, ach: [], market: 1, log: [], peakNW: 0
+    jail: 0, record: 0, heat: 0, done: {}, ach: [], market: 1, log: [], peakNW: 0, xp: 0, hobbies: 0, trips: 0, goals: []
   };
   S.log.push({ age: 0, items: [] });
   say('👶', `You were born in ${country.n} ${country.f} to a ${FAMILIES[tier].n} family.`, '');
   say('👨‍👩‍👦', `Your mother is ${mom.name} and your father is ${dad.name}.`, '');
+  genGoals();
   save();
 }
 
@@ -84,6 +86,33 @@ function say(icon, text, cls = '') { S.log[S.log.length - 1].items.push({ i: ico
 function famAllowance() { return FAMILIES[S.tier].base * S.w; }
 function lifeCost() { return 8000 * Math.max(0.4, S.w); }
 function ownedHome() { return S.assets.filter(a => a.cat === 'home').length > 0; }
+
+/* ---------- yearly goals + XP ---------- */
+const GOAL_POOL = [
+  { id: 'gym', t: 'Hit the gym', ok: s => s.age >= 14, chk: s => s.done.gym },
+  { id: 'call', t: 'Call Mom or Dad', ok: s => s.mom.alive || s.dad.alive, chk: s => s.done.mom || s.done.dad },
+  { id: 'study', t: 'Study hard', ok: s => s.age >= 6, chk: s => s.done.study },
+  { id: 'date', t: 'Go on a date night', ok: s => !!s.partner, chk: s => s.done.date },
+  { id: 'meet', t: 'Meet someone new', ok: s => s.age >= 18 && !s.partner, chk: s => s.done.meet },
+  { id: 'upg', t: 'Level up a business', ok: s => s.biz.length > 0, chk: s => s.done.upg },
+  { id: 'sign', t: 'Sign a contract', ok: s => s.age >= 16, chk: s => s.done.sign },
+  { id: 'inv', t: 'Invest some money', ok: s => s.age >= 18, chk: s => s.done.inv },
+  { id: 'apply', t: 'Apply for a job', ok: s => s.age >= 14 && !s.job && !s.college, chk: s => s.done.apply },
+  { id: 'viral', t: 'Post something outrageous', ok: s => s.age >= 13, chk: s => s.done.viral },
+  { id: 'therapy', t: 'See a therapist', ok: s => s.age >= 14, chk: s => s.done.therapy }
+];
+function genGoals() {
+  const pool = GOAL_POOL.filter(g => g.ok(S)); S.goals = [];
+  while (S.goals.length < 3 && pool.length) {
+    const g = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+    S.goals.push({ id: g.id, t: g.t, k: pick(['cash', 'cash', 'happy', 'smarts']), done: false, claimed: false });
+  }
+}
+function updateGoals() { (S.goals || []).forEach(g => { const d = GOAL_POOL.find(x => x.id === g.id); if (d && d.chk(S)) g.done = true; }); }
+function rewardCash() { return Math.round(250 + Math.min(50000, Math.max(0, netWorth()) * 0.002)); }
+function rewardText(g) { return g.k === 'cash' ? '🪙 +' + fmt(rewardCash()) : g.k === 'happy' ? '😊 +5' : '🧠 +3'; }
+const level = () => Math.floor((S.xp || 0) / 300) + 1;
+const tapPower = () => 1 + Math.floor(S.biz.reduce((t, b) => t + b.level, 0) / 2);
 
 /* ---------- derived numbers ---------- */
 function jobDef() { return S.job ? JOBS.find(j => j.id === S.job) : null; }
@@ -148,28 +177,29 @@ const ACH = [
   { id: 'old', t: 'Lived to 90', ok: () => S.age >= 90 }
 ];
 function checkAch() {
-  ACH.forEach(a => { if (!S.ach.includes(a.id) && a.ok()) { S.ach.push(a.id); say('🏆', 'Achievement unlocked: ' + a.t, 'gold'); } });
+  ACH.forEach(a => { if (!S.ach.includes(a.id) && a.ok()) { S.ach.push(a.id); S.xp = (S.xp || 0) + 100; say('🏆', 'Achievement unlocked: ' + a.t, 'gold'); } });
 }
 
 /* ---------- save / load ---------- */
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
-function load() { try { const r = localStorage.getItem(SAVE_KEY); if (r) { S = JSON.parse(r); return true; } } catch (e) { /* ignore */ } return false; }
+function load() { try { const r = localStorage.getItem(SAVE_KEY); if (r) { S = JSON.parse(r); S.xp = S.xp || 0; S.hobbies = S.hobbies || 0; S.trips = S.trips || 0; S.goals = S.goals || []; return true; } } catch (e) { /* ignore */ } return false; }
 
 /* ---------- modals ---------- */
 function showModal(m) {
   if ($('modal').classList.contains('open')) { modalQueue.push(m); return; }
-  $('modalIcon').textContent = m.icon || '❗';
+  $('modalIcon').innerHTML = m.art || m.icon || '❗';
   $('modalTitle').textContent = m.title;
   $('modalText').innerHTML = m.text;
   const box = $('modalBtns'); box.innerHTML = '';
-  (m.buttons || [{ t: 'OK' }]).forEach(b => {
+  (m.buttons || [{ t: 'OK' }]).forEach((b, i) => {
     const el = document.createElement('button');
-    el.className = 'btn ' + (b.cls || ''); el.textContent = b.t;
+    el.className = 'btn ' + (b.cls === 'bad' ? 'bad' : i === 0 ? 'gold' : i === 1 ? 'teal' : 'bad'); el.textContent = b.t;
     el.onclick = () => { $('modal').classList.remove('open'); if (b.fn) b.fn(); refresh(); const n = modalQueue.shift(); if (n) setTimeout(() => showModal(n), 120); };
     box.appendChild(el);
   });
   $('modal').classList.add('open');
 }
+
 const modalOpen = () => $('modal').classList.contains('open') || $('contract').classList.contains('open');
 
 /* ---------- random events ---------- */
@@ -184,7 +214,7 @@ const EVENTS = [
   } },
   { ok: s => s.biz.length > 0, run() {
     const b = pick(S.biz); const d = BIZ[b.id]; const offer = Math.round(bizValue(b) * 0.35);
-    showModal({ icon: '📈', title: 'Investor offer', text: `An angel investor offers <b>${fmt(offer)}</b> for 15% of <b>${d.name}</b> profits.`, buttons: [
+    showModal({ icon: '📈', title: 'Big Opportunity!', art: '<img src="assets/runway/ui/deal.png" alt="">', text: `An angel investor offers <b>${fmt(offer)}</b> for 15% of <b>${d.name}</b> profits.`, buttons: [
       { t: 'Accept', cls: 'gold', fn: () => { S.cash += offer; b.dilution = Math.min(0.6, (b.dilution || 0) + 0.15); say('📈', `You sold 15% of ${d.name} for ${fmt(offer)}.`, 'good'); } },
       { t: 'Decline', fn: () => say('📈', `You turned down the investor for ${d.name}.`, '') }] });
   } },
@@ -321,6 +351,7 @@ function ageUp() {
   const p = 0.00003 * Math.exp(0.1 * S.age) * (2.5 - 1.5 * S.health / 100);
   if (S.health <= 0 || (S.age > 30 && chance(p)) || chance(0.0004)) die();
 
+  S.xp += 20; genGoals();
   checkAch();
   S.peakNW = Math.max(S.peakNW, netWorth());
   save(); refresh(); renderFeed();
@@ -342,19 +373,36 @@ function renderFeed() {
   $('feed').scrollTop = $('feed').scrollHeight;
 }
 function bar(label, v, cls) { return `<div class="sb"><label>${label}</label><div class="bar"><i class="${cls}" style="width:${clamp(v)}%"></i></div><b>${Math.round(clamp(v))}</b></div>`; }
+function metersHTML() {
+  const career = clamp((S.job ? 25 * (jobTier() + 1) : 0) + S.biz.reduce((t, b) => t + b.level * 6, 0));
+  const wealth = clamp(Math.log10(Math.max(1, netWorth())) / 9 * 100);
+  return [['Career', career, '#22c3b0'], ['Wealth', wealth, '#f5c542'], ['Health', S.health, '#e8453c'], ['Happy', S.happy, '#8a5cf6']]
+    .map(([l, v, c]) => `<div class="orb"><span style="--v:${Math.round(v)};--c:${c}"></span>${l}</div>`).join('');
+}
 function refresh() {
   if (!S) return;
   const t = statusTitle();
-  $('avatar').innerHTML = art('stages', stageIdx(), 46, stageIcon());
+  $('avatar').innerHTML = art('stages', stageIdx(), 44, stageIcon());
   $('pname').textContent = S.name;
   $('psub').textContent = `${S.flag} Age ${S.age} · ${occupation()}`;
   $('cash').textContent = fmt(S.cash);
   $('cash').className = S.cash < 0 ? 'neg' : '';
-  $('nw').textContent = `${t.w} · ${t.f}`;
-  $('stats').innerHTML = bar('😊 Happy', S.happy, 'g') + bar('❤️ Health', S.health, 'r') + bar('🧠 Smarts', S.smarts, 'b') + bar('✨ Looks', S.looks, 'y');
+  $('hudLvl').textContent = level();
+  $('nw').innerHTML = `${t.w}<br>NW ${fmt(netWorth())}`;
+  $('meters').innerHTML = metersHTML();
   $('ageBtn').disabled = !S.alive;
   document.querySelectorAll('.tabs [data-p]').forEach(b => b.classList.toggle('on', b.dataset.p === UI.panel));
   if (UI.panel) renderPanel();
+}
+function tap(e) {
+  if (!S || !S.alive || modalOpen() || $('title').classList.contains('open')) return;
+  const n = tapPower(); S.cash += n;
+  const h = $('hero'), r = h.getBoundingClientRect();
+  const p = document.createElement('div'); p.className = 'pop'; p.textContent = '+' + fmt(n);
+  p.style.left = Math.max(10, Math.min(r.width - 50, (e.clientX || r.left + r.width / 2) - r.left - 14)) + 'px';
+  p.style.top = Math.max(10, (e.clientY || r.top + r.height / 2) - r.top - 20) + 'px';
+  h.appendChild(p); setTimeout(() => p.remove(), 800);
+  refresh();
 }
 
 /* ---------- panels ---------- */
@@ -364,7 +412,8 @@ function tabs(group, list) { return `<div class="subtabs">${list.map(([k, l]) =>
 const locked = () => S.jail > 0 ? `<div class="note bad">⛓️ You are in prison for ${S.jail} more year(s). Most actions are unavailable.</div>` : '';
 
 function renderPanel() {
-  const T = { money: ['💰 Money', moneyHTML], love: ['❤️ Love & Family', loveHTML], crazy: ['😈 Crazy', crazyHTML], status: ['👑 Status', statusHTML] }[UI.panel];
+  const money = { jobs: 'Careers', biz: 'Business Empire', assets: 'Asset Shop', invest: 'Invest' }[UI.sub.money];
+  const T = { money: [money, moneyHTML], love: ['Love & Family', loveHTML], crazy: ['Crazy', crazyHTML], status: ['Life & Goals', statusHTML] }[UI.panel];
   $('sheetTitle').textContent = T[0];
   const y = $('sheetBody').scrollTop;
   $('sheetBody').innerHTML = locked() + T[1]();
@@ -373,7 +422,9 @@ function renderPanel() {
 
 function moneyHTML() {
   const sub = UI.sub.money;
-  const head = tabs('money', [['jobs', '💼 Jobs'], ['biz', '🏢 Business'], ['assets', '🛍️ Assets'], ['invest', '📊 Invest']]);
+  const inc = S.biz.reduce((t, b) => t + bizEstimate(b), 0) + salary() * 0.85;
+  const head = `<div class="ribbon"><div class="rb"><i class="coin-ic">$</i><b>${fmt(inc)}</b><small>/yr</small></div><div class="rb2"><b>${fmt(S.cash)}</b> 💵</div></div>` +
+    tabs('money', [['jobs', '💼 Jobs'], ['biz', '🏢 Business'], ['assets', '🛍️ Assets'], ['invest', '📊 Invest']]);
   return head + ({ jobs: jobsHTML, biz: bizHTML, assets: assetsHTML, invest: investHTML }[sub])();
 }
 
@@ -396,21 +447,25 @@ function bizHTML() {
   if (S.biz.length) {
     h += '<h5>Your businesses</h5>';
     S.biz.forEach((b, i) => {
-      const d = BIZ[b.id]; const c = b.contract;
-      const up = Math.round(d.cost * Math.pow(2, b.level - 1) * 1.5);
-      h += `<div class="card"><b>${art('niches', NICHES.findIndex(n => n.id === d.niche), 24, d.icon)} ${d.name}</b> <i class="tag">${d.online ? 'online' : 'offline'}</i><br><small>${d.nicheName} · ${d.modelName} · Level ${b.level}/10</small><br>Est. profit <b class="g">${fmt(bizEstimate(b))}/yr</b> · Value ${fmt(bizValue(b))}<br><small>📄 ${c.cp} · ${c.share}% share · ${b.termLeft > 0 ? b.termLeft + ' yr left' : '<b class="bad">EXPIRED</b>'}${c.excl ? ' · exclusive' : ''}${c.trapId && !c.trapStruck ? ' · ⚠️ fine print' : ''}</small><div class="btns">
-        <button class="btn sm gold" ${b.level < 10 && S.cash >= up ? '' : 'disabled'} data-a="upgrade" data-v="${i}">⬆️ Level up ${b.level < 10 ? fmt(up) : 'MAX'}</button>
-        <button class="btn sm" data-a="renew" data-v="${i}">📄 ${b.termLeft > 0 ? 'Re-negotiate' : 'Renew'}</button>
-        <button class="btn sm" data-a="sell" data-v="${i}">Sell ${fmt(bizValue(b) * 0.8)}</button></div></div>`;
+      const d = BIZ[b.id], c = b.contract, up = Math.round(d.cost * Math.pow(2, b.level - 1) * 1.5);
+      const pct = b.level >= 10 ? 100 : Math.min(100, Math.floor(Math.max(0, S.cash) / up * 100));
+      h += `<div class="bcard"><div class="btile">${art('niches', NICHES.findIndex(n => n.id === d.niche), 56, d.icon)}<em>Lvl ${b.level}</em></div>
+        <div class="binfo"><b>${d.name}</b><div class="inc"><i class="coin-ic s">$</i>${fmt(bizEstimate(b))}/yr</div>
+        <div class="prog"><i style="width:${pct}%"></i><span>${b.level >= 10 ? 'MAX' : pct + '%'}</span></div>
+        <small>📄 ${c.cp} · ${c.share}% · ${b.termLeft > 0 ? b.termLeft + ' yr left' : '<b class="bad">EXPIRED</b>'}${c.excl ? ' · exclusive' : ''}${c.trapId && !c.trapStruck ? ' · ⚠️ fine print' : ''}</small></div>
+        <button class="gbtn" ${b.level < 10 && S.cash >= up ? '' : 'disabled'} data-a="upgrade" data-v="${i}">LEVEL UP<small>${b.level < 10 ? fmt(up) : 'MAX'}</small></button>
+        <div class="bmini"><button class="mini" data-a="renew" data-v="${i}">📄 ${b.termLeft > 0 ? 'Re-negotiate' : 'Renew'}</button><button class="mini" data-a="sell" data-v="${i}">Sell ${fmt(bizValue(b) * 0.8)}</button></div></div>`;
     });
   }
-  h += '<h5>Start a business — pick a niche</h5><div class="chips">' + NICHES.map(n => `<button class="${UI.niche === n.id ? 'on' : ''}" data-a="niche" data-v="${n.id}">${art('niches', NICHES.indexOf(n), 34, n.icon)}<small>${n.n}</small></button>`).join('') + '</div>';
+  h += '<div class="plate sm">Start a business</div><div class="chips">' + NICHES.map(n => `<button class="${UI.niche === n.id ? 'on' : ''}" data-a="niche" data-v="${n.id}">${art('niches', NICHES.indexOf(n), 34, n.icon)}<small>${n.n}</small></button>`).join('') + '</div>';
   h += `<div class="chips f">${['all', 'online', 'offline'].map(f => `<button class="${UI.filter === f ? 'on' : ''}" data-a="filter" data-v="${f}">${f}</button>`).join('')}</div>`;
+  const young = S.age < 16;
   Object.keys(MODELS).map(m => BIZ[UI.niche + ':' + m]).filter(d => UI.filter === 'all' || (UI.filter === 'online') === d.online).forEach(d => {
     const owned = S.biz.some(b => b.id === d.id);
-    h += `<div class="row"><span class="ic">${art('niches', NICHES.findIndex(n => n.id === d.niche), 44, d.icon)}</span><div class="grow"><b>${d.name}</b> <i class="tag">${d.online ? 'online' : 'offline'}</i><small>${d.modelName} · startup ${fmt(d.cost)} · ~${fmt(d.baseProfit)}/yr</small></div><button class="btn sm gold" ${owned || S.cash < d.cost || S.age < 16 || S.jail || S.biz.length >= 12 ? 'disabled' : ''} data-a="start" data-v="${d.id}">${owned ? 'Owned' : '✍️ Sign'}</button></div>`;
+    h += `<div class="bcard ${young ? 'locked' : ''}"><div class="btile">${art('niches', NICHES.findIndex(n => n.id === d.niche), 56, d.icon)}<em>${d.online ? 'online' : 'offline'}</em></div>
+      <div class="binfo"><b>${d.name}</b><div class="inc"><i class="coin-ic s">$</i>~${fmt(d.baseProfit)}/yr</div><small>${d.modelName} · startup ${fmt(d.cost)}</small></div>
+      <button class="gbtn" ${owned || S.cash < d.cost || young || S.jail || S.biz.length >= 12 ? 'disabled' : ''} data-a="start" data-v="${d.id}">${owned ? 'OWNED' : 'SIGN'}<small>${fmt(d.cost)}</small></button>${young ? '<div class="lock">🔒 UNLOCK: AGE 16</div>' : ''}</div>`;
   });
-  if (S.age < 16) h += '<div class="note">You must be 16+ to sign contracts.</div>';
   return h;
 }
 
@@ -418,11 +473,11 @@ function assetsHTML() {
   let h = '<div class="chips f">' + Object.keys(ASSETS).map(k => `<button class="${UI.cat === k ? 'on' : ''}" data-a="cat" data-v="${k}">${ASSETS[k].icon} ${ASSETS[k].label}</button>`).join('') + '</div>';
   const owned = S.assets.map((a, i) => ({ a, i })).filter(x => x.a.cat === UI.cat);
   if (owned.length) h += '<h5>You own</h5>' + owned.map(({ a, i }) => `<div class="row"><span class="ic">${art(a.cat, a.idx, 44, a.icon)}</span><div class="grow"><b>${a.n}</b><small>Worth ${fmt(a.value)}${a.up ? ' · upkeep ' + fmt(a.price * a.up) + '/yr' : ''}</small></div><button class="btn sm" data-a="sellAsset" data-v="${i}">Sell</button></div>`).join('');
-  h += '<h5>Shop</h5>';
+  h += '<h5>Shop</h5><div class="agrid">';
   ASSETS[UI.cat].items.forEach((it, i) => {
-    h += `<div class="row"><span class="ic">${art(UI.cat, i, 44, it.icon)}</span><div class="grow"><b>${it.n}</b><small>${fmt(it.price)}${it.up ? ' · upkeep ' + fmt(it.price * it.up) + '/yr' : ''}${it.looks ? ' · +' + it.looks + ' looks' : ''}</small></div><button class="btn sm gold" ${S.cash >= it.price && !S.jail ? '' : 'disabled'} data-a="buy" data-v="${i}">Buy</button></div>`;
+    h += `<div class="acard"><span class="ai">${art(UI.cat, i, 64, it.icon)}</span><b>${it.n}</b><small>${it.up ? 'upkeep ' + fmt(it.price * it.up) + '/yr' : 'no upkeep'}${it.looks ? ' · +' + it.looks + ' looks' : ''}</small><button class="gbtn sm" ${S.cash >= it.price && !S.jail ? '' : 'disabled'} data-a="buy" data-v="${i}">${fmt(it.price)}</button></div>`;
   });
-  return h;
+  return h + '</div>';
 }
 
 function investHTML() {
@@ -459,13 +514,31 @@ function crazyHTML() {
   }).join('');
 }
 
+function lifeTiles() {
+  const homeIdx = S.assets.filter(a => a.cat === 'home').reduce((m, a) => Math.max(m, a.idx == null ? 0 : a.idx), -1);
+  return [
+    { n: 'Home', ico: 'life-home', e: '🏠', p: homeIdx < 0 ? 0 : Math.round((homeIdx + 1) / 7 * 100), lv: homeIdx + 1 },
+    { n: 'Relationships', ico: 'life-rel', e: '💞', p: S.partner ? Math.round(S.partner.score) : 0, lv: 1 + (S.partner && S.partner.married ? 1 : 0) + Math.min(3, S.kids.length) },
+    { n: 'Health', ico: 'life-health', e: '🏃', p: Math.round(S.health), lv: 1 + Math.floor(S.health / 25) },
+    { n: 'Education', ico: 'life-edu', e: '🎓', p: Math.round(S.smarts), lv: S.deg ? 4 : S.college ? 3 : S.age >= 14 ? 2 : 1 },
+    { n: 'Hobbies', ico: 'life-hobby', e: '🎨', p: Math.min(100, S.hobbies * 10), lv: 1 + Math.floor(S.hobbies / 3) },
+    { n: 'Travel', ico: 'life-travel', e: '✈️', p: Math.min(100, S.trips * 20), lv: 1 + S.trips }
+  ];
+}
 function statusHTML() {
-  const t = statusTitle(); const nw = netWorth();
+  updateGoals();
+  const t = statusTitle(), nw = netWorth(), xp = (S.xp || 0) % 300;
   const power = Math.round(clamp(Math.log10(Math.max(10, nw)) * 10 + S.biz.length * 3 + S.fame * 0.3 - 20));
-  return `<div class="card gold"><b>${stageIcon()} ${S.name}</b><br>${S.flag} ${S.country} · born into a ${FAMILIES[S.tier].n} family<br>Net worth <b>${fmt(nw)}</b> (${t.w})</div>
-    ${bar('👑 Fame', S.fame, 'y')}${bar('⚡ Power', power, 'b')}${bar('😊 Happy', S.happy, 'g')}${bar('❤️ Health', S.health, 'r')}
-    <h5>Achievements ${S.ach.length}/${ACH.length}</h5>` + ACH.map(a => `<div class="row"><span class="ic">${S.ach.includes(a.id) ? '🏆' : '🔒'}</span><div class="grow ${S.ach.includes(a.id) ? '' : 'dim'}"><b>${a.t}</b></div></div>`).join('') +
-    `<h5>Life</h5><button class="btn sm bad" data-a="restart">Start a new life</button>`;
+  const claimable = S.goals.some(g => g.done && !g.claimed);
+  return `<div class="lvlhead"><div class="lv">👑 LEVEL ${level()}</div><div class="xpbar"><i style="width:${xp / 3}%"></i><span>XP ${xp}/300</span></div></div>
+    <div class="card gold"><b>${stageIcon()} ${S.name}</b><br>${S.flag} ${S.country} · born into a ${FAMILIES[S.tier].n} family<br>Net worth <b>${fmt(nw)}</b> (${t.w}) · ${t.f}</div>
+    <div class="tiles">${lifeTiles().map(x => `<div class="tile"><b>${x.n}</b><div class="ring" style="--p:${x.p}"><span class="lic" style="background-image:url(assets/runway/ui/${x.ico}.png)">${x.e}</span></div>${x.p}%<br><span class="lvb">Lvl ${x.lv}</span></div>`).join('')}</div>
+    <div class="goals"><h4>Yearly Goals</h4>${S.goals.map(g => `<div class="goal ${g.done ? 'done' : ''} ${g.claimed ? 'claimed' : ''}"><span class="cb">${g.done ? '✓' : ''}</span>${g.t}<span class="rw">${rewardText(g)}</span></div>`).join('') || '<div class="goal">No goals right now.</div>'}
+      <button class="btn big gold" data-a="claim" ${claimable ? '' : 'disabled'}>Claim Reward</button></div>
+    <h5>Milestones ${S.ach.length}/${ACH.length}</h5>
+    <div class="trophies">${ACH.map(a => { const u = S.ach.includes(a.id); return `<div class="trophy ${u ? '' : 'lockd'}"><span style="background-image:url(assets/runway/ui/${u ? 'trophy' : 'trophy-lock'}.png)">${u ? '🏆' : '🔒'}</span>${a.t.split(' — ')[0]}</div>`; }).join('')}</div>
+    <h5>Stats</h5>${bar('👑 Fame', S.fame, 'y')}${bar('⚡ Power', power, 'b')}${bar('😊 Happy', S.happy, 'g')}${bar('🧠 Smarts', S.smarts, 'b')}${bar('✨ Looks', S.looks, 'y')}${bar('❤️ Health', S.health, 'r')}
+    <h5>Life</h5><button class="btn sm bad" data-a="restart">Start a new life</button>`;
 }
 
 /* ---------- actions ---------- */
@@ -473,7 +546,7 @@ const A = {
   sub(v, el) { UI.sub[el.dataset.g] = v; refresh(); },
   niche(v) { UI.niche = v; refresh(); }, filter(v) { UI.filter = v; refresh(); }, cat(v) { UI.cat = v; refresh(); },
   apply(id) {
-    const d = JOBS.find(j => j.id === id);
+    const d = JOBS.find(j => j.id === id); S.done.apply = true;
     if (chance(0.8 + S.smarts / 500)) { S.job = id; S.jobYears = 0; say('💼', `You were hired as ${d.ladder[0]}.`, 'good'); } else say('💼', `Your application for ${d.ladder[0]} was rejected.`, 'bad');
     save(); refresh(); renderFeed();
   },
@@ -482,7 +555,7 @@ const A = {
   renew(i) { openContract(S.biz[i].id, 'renew', i); },
   upgrade(i) {
     const b = S.biz[i]; const up = Math.round(BIZ[b.id].cost * Math.pow(2, b.level - 1) * 1.5);
-    if (S.cash < up) return; S.cash -= up; b.level++; say(BIZ[b.id].icon, `You expanded ${BIZ[b.id].name} to level ${b.level}.`, 'good'); S.fame += 0.5; checkAch(); save(); refresh(); renderFeed();
+    if (S.cash < up) return; S.cash -= up; b.level++; S.done.upg = true; S.xp += 10 * b.level; say(BIZ[b.id].icon, `You expanded ${BIZ[b.id].name} to level ${b.level}.`, 'good'); S.fame += 0.5; checkAch(); save(); refresh(); renderFeed();
   },
   sell(i) {
     const b = S.biz[i]; let v = bizValue(b) * 0.8;
@@ -496,7 +569,7 @@ const A = {
     say(it.icon, `You bought a ${it.n} for ${fmt(it.price)}.`, 'gold'); checkAch(); save(); refresh(); renderFeed();
   },
   sellAsset(i) { const a = S.assets[i]; const v = a.value * 0.9; S.cash += v; say(a.icon, `You sold your ${a.n} for ${fmt(v)}.`, ''); S.assets.splice(i, 1); save(); refresh(); renderFeed(); },
-  inv(v) { const [k, p] = v.split(':'); const amt = Math.max(0, S.cash) * parseFloat(p); if (amt < 1) return; S.cash -= amt; S.invest[k] += amt; save(); refresh(); },
+  inv(v) { const [k, p] = v.split(':'); const amt = Math.max(0, S.cash) * parseFloat(p); if (amt < 1) return; S.done.inv = true; S.cash -= amt; S.invest[k] += amt; save(); refresh(); },
   wd(k) { S.cash += S.invest[k]; S.invest[k] = 0; save(); refresh(); },
   meet() {
     S.done.meet = true;
@@ -538,11 +611,17 @@ const A = {
     save(); refresh(); renderFeed();
   },
   fun(id) {
-    const a = ACTIVITIES.find(x => x.id === id); S.done[id] = true; S.cash -= a.cost;
+    const a = ACTIVITIES.find(x => x.id === id); S.done[id] = true; S.cash -= a.cost; if (id === 'travel') S.trips++; else S.hobbies++;
     const r = a.run(S);
     S.happy = clamp(S.happy + (r.happy || 0)); S.health = clamp(S.health + (r.health || 0)); S.smarts = clamp(S.smarts + (r.smarts || 0)); S.looks = clamp(S.looks + (r.looks || 0)); S.fame = Math.max(0, S.fame + (r.fame || 0)); S.cash += r.cash || 0;
     say(a.icon, r.msg, (r.health < 0 || r.looks < 0 || r.happy < 0) ? 'bad' : 'good');
     if (S.health <= 0) die();
+    save(); refresh(); renderFeed();
+  },
+  claim() {
+    let n = 0;
+    S.goals.forEach(g => { if (g.done && !g.claimed) { g.claimed = true; n++; S.xp += 25; if (g.k === 'cash') S.cash += rewardCash(); else if (g.k === 'happy') S.happy = clamp(S.happy + 5); else S.smarts = clamp(S.smarts + 3); } });
+    if (n) say('🎯', `You claimed ${n} goal reward${n > 1 ? 's' : ''}.`, 'gold');
     save(); refresh(); renderFeed();
   },
   restart() { showModal({ icon: '⚠️', title: 'Start over?', text: 'This ends your current life and starts a new one.', buttons: [{ t: 'New life', cls: 'bad', fn: () => { newLife(); closePanel(); renderFeed(); refresh(); } }, { t: 'Cancel' }] }); }
@@ -635,9 +714,9 @@ function signContract() {
   setTimeout(() => {
     const contract = { cp: c.cp, share: c.share, term: c.term, excl: c.excl, fee: c.fee, trapId: c.trapId, trapStruck: c.trapStruck, revealed: c.trapRead };
     if (c.mode === 'start') {
-      S.cash -= c.cost; S.biz.push({ id: c.d.id, level: 1, termLeft: c.term, contract, dilution: 0 });
+      S.cash -= c.cost; S.done.sign = true; S.biz.push({ id: c.d.id, level: 1, termLeft: c.term, contract, dilution: 0 });
       say('✍️', `You signed with ${c.cp} and launched ${c.d.name} for ${fmt(c.cost)}.`, 'gold');
-    } else { const b = S.biz[c.idx]; b.contract = contract; b.termLeft = c.term; say('✍️', `You signed a new ${c.term}-year contract with ${c.cp} for ${c.d.name}.`, 'gold'); }
+    } else { const b = S.biz[c.idx]; b.contract = contract; b.termLeft = c.term; S.done.sign = true; say('✍️', `You signed a new ${c.term}-year contract with ${c.cp} for ${c.d.name}.`, 'gold'); }
     checkAch(); save(); closeContract(); renderFeed();
   }, 1000);
 }
@@ -648,6 +727,8 @@ document.addEventListener('click', (e) => {
   const p = e.target.closest('[data-p]'); if (p) { UI.panel === p.dataset.p ? closePanel() : openPanel(p.dataset.p); }
 });
 $('ageBtn').addEventListener('click', ageUp);
+$('hero').addEventListener('click', tap);
+$('btnGear').addEventListener('click', () => { if (S) openPanel('status'); });
 $('sheetClose').addEventListener('click', closePanel);
 $('btnNew').addEventListener('click', () => { newLife(); $('title').classList.remove('open'); renderFeed(); refresh(); });
 $('btnCont').addEventListener('click', () => { $('title').classList.remove('open'); renderFeed(); refresh(); });
