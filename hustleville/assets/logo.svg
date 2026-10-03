@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-label="Hustleville logo">
+  <defs>
+    <radialGradient id="sun" cx="50%" cy="45%" r="55%">
+      <stop offset="0" stop-color="#fff3a8"/>
+      <stop offset="0.6" stop-color="#ffc83d"/>
+      <stop offset="1" stop-color="#e8962a"/>
+    </radialGradient>
+    <linearGradient id="word" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe66b"/>
+      <stop offset="1" stop-color="#f2a900"/>
+    </linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0f2a47"/>
+      <stop offset="1" stop-color="#0a1b30"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="420" rx="36" fill="url(#bg)"/>
+  <!-- emblem -->
+  <g transform="translate(320 150)">
+    <circle r="88" fill="url(#sun)" stroke="#0a1b30" stroke-width="8"/>
+    <circle r="66" fill="none" stroke="#fff3a8" stroke-width="3" opacity=".6"/>
+    <text y="22" text-anchor="middle" font-family="Fredoka, 'Baloo 2', Arial Rounded MT Bold, sans-serif" font-weight="800" font-size="64" fill="#b86e00" opacity=".55">$</text>
+    <!-- skyline (business) -->
+    <g fill="#18b8a6" stroke="#0a1b30" stroke-width="6" stroke-linejoin="round">
+      <rect x="-150" y="-10" width="34" height="96"/>
+      <rect x="-114" y="-48" width="40" height="134"/>
+      <rect x="-72" y="12" width="32" height="74"/>
+    </g>
+    <g fill="#0a1b30" opacity=".55">
+      <rect x="-104" y="-32" width="8" height="8"/><rect x="-90" y="-32" width="8" height="8"/>
+      <rect x="-104" y="-10" width="8" height="8"/><rect x="-90" y="-10" width="8" height="8"/>
+      <rect x="-104" y="12" width="8" height="8"/><rect x="-90" y="12" width="8" height="8"/>
+    </g>
+    <!-- house + tree (life) -->
+    <g stroke="#0a1b30" stroke-width="6" stroke-linejoin="round">
+      <rect x="62" y="30" width="62" height="56" fill="#ff7a59"/>
+      <path d="M54 34 L93 -2 L132 34 Z" fill="#c8452b"/>
+      <rect x="86" y="54" width="14" height="32" fill="#ffe66b"/>
+      <rect x="136" y="48" width="8" height="38" fill="#8a5a2b"/>
+      <circle cx="140" cy="36" r="24" fill="#4cc65a"/>
+    </g>
+    <path d="M-160 86 H165" stroke="#0a1b30" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <!-- wordmark -->
+  <g font-family="Fredoka, 'Baloo 2', Arial Rounded MT Bold, sans-serif" font-weight="800" text-anchor="middle">
+    <text x="320" y="318" font-size="78" letter-spacing="2" fill="#0a1b30" stroke="#0a1b30" stroke-width="16" stroke-linejoin="round">HUSTLEVILLE</text>
+    <text x="320" y="318" font-size="78" letter-spacing="2" fill="url(#word)" stroke="#06121f" stroke-width="3">HUSTLEVILLE</text>
+    <text x="320" y="364" font-size="22" letter-spacing="8" fill="#7fe3d6" font-weight="600">BUSINESS · LIFE · CLICK</text>
+  </g>
+</svg>
