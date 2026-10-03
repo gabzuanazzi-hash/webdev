@@ -2,61 +2,66 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Hustleville</title>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Special+Elite&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="game">
 
   <header class="hud">
-    <button class="icon-btn" aria-label="Settings">⚙️</button>
     <img class="wordmark" src="assets/wordmark.svg" alt="Hustleville">
-    <div class="chip gem">💎 <b id="gems">25</b></div>
+    <div class="nw" id="nw"></div>
   </header>
 
   <section class="profile">
-    <div class="avatar" aria-hidden="true">🧑‍💼</div>
-    <div class="who">
-      <strong>Alex Rivera</strong>
-      <span>Age 19 · Coffee Cart Owner</span>
-      <div class="xp"><i style="width:42%"></i></div>
-    </div>
-    <div class="cash">
-      <b id="cash">$12,480</b>
-      <small id="rate">+$1 / tap · $3 / s</small>
-    </div>
+    <div class="avatar" id="avatar">👶</div>
+    <div class="who"><strong id="pname"></strong><span id="psub"></span></div>
+    <div class="cash"><b id="cash">$0</b><small>cash</small></div>
   </section>
 
-  <main class="town">
-    <aside class="meters" aria-label="Life meters">
-      <div class="meter" style="--v:62;--c:var(--teal)"><span>💼</span><em>Career</em></div>
-      <div class="meter" style="--v:35;--c:var(--gold)"><span>🪙</span><em>Wealth</em></div>
-      <div class="meter" style="--v:80;--c:var(--green)"><span>💚</span><em>Health</em></div>
-      <div class="meter" style="--v:55;--c:var(--coral)"><span>❤️</span><em>Love</em></div>
-    </aside>
+  <div class="stage">
+    <section class="feed" id="feed" aria-live="polite"></section>
+    <section class="sheet" id="sheet">
+      <div class="sheet-head"><b id="sheetTitle"></b><button class="x" id="sheetClose" aria-label="Close">✕</button></div>
+      <div class="sheet-body" id="sheetBody"></div>
+    </section>
+  </div>
 
-    <div class="diorama" aria-hidden="true">
-      <div class="tower"></div><div class="shop"></div><div class="home"></div><div class="tree"></div>
-    </div>
-    <button class="coin" id="coin" aria-label="Hustle: tap to earn">$</button>
-  </main>
-
-  <section class="feed" id="feed" aria-live="polite">
-    <article class="event"><span>🤝</span><p>Closed a deal at the cafe <b class="plus">+$250</b></p></article>
-    <article class="event"><span>🏃</span><p>Went for a morning jog <b class="plus">+Health</b></p></article>
-    <article class="event"><span>🎓</span><p>Finished an online course <b class="plus">+Career</b></p></article>
-  </section>
+  <section class="stats" id="stats"></section>
 
   <nav class="tabs">
-    <button class="on"><span>💼</span>Business</button>
-    <button><span>🏡</span>Life</button>
-    <button class="go" id="go" aria-label="Hustle"><span>⚡</span>HUSTLE</button>
-    <button><span>🚀</span>Upgrades</button>
-    <button><span>🛍️</span>Shop</button>
+    <button data-p="money"><span>💰</span>Money</button>
+    <button data-p="love"><span>❤️</span>Love</button>
+    <button class="age" id="ageBtn" aria-label="Age one year"><span>＋</span>AGE</button>
+    <button data-p="crazy"><span>😈</span>Crazy</button>
+    <button data-p="status"><span>👑</span>Status</button>
   </nav>
 </div>
+
+<!-- generic modal -->
+<div class="overlay" id="modal">
+  <div class="modal">
+    <div class="m-icon" id="modalIcon"></div>
+    <h3 id="modalTitle"></h3>
+    <p id="modalText"></p>
+    <div class="m-btns" id="modalBtns"></div>
+  </div>
+</div>
+
+<!-- immersive contract desk -->
+<div class="overlay contract" id="contract"><div class="desk" id="cDesk"></div></div>
+
+<!-- title screen -->
+<div class="overlay open title" id="title">
+  <img src="assets/logo.svg" alt="Hustleville — Business · Life · Click">
+  <p>👶 Be born · 🧑 Grow up · 💰 Build empires · ❤️ Love · 😈 Cause trouble · 👑 Rule · ⚰️ Die</p>
+  <button class="btn gold big" id="btnNew">👶 Be born</button>
+  <button class="btn big" id="btnCont" hidden>▶ Continue life</button>
+</div>
+
+<script src="data.js"></script>
 <script src="game.js"></script>
 </body>
 </html>
