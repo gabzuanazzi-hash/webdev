@@ -16,7 +16,8 @@ const fmt = (n) => {
   if (n >= 1e4) return s + '$' + (n / 1e3).toFixed(1) + 'K';
   return s + '$' + Math.round(n).toLocaleString();
 };
-const SAVE_KEY = 'hustleville-save-v1';
+const SAVE_KEY = 'hustleville-save-v2';
+function toast(m) { const t = $('toast'); if (!t) return; t.textContent = m; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2800); }
 
 /* ---------- Runway art (sprite sheets, optional) ----------
    Drop the generated sheets into assets/runway/ with these names. Until a
@@ -28,11 +29,15 @@ const ART = {
   clothes: { src: 'assets/runway/clothes.png', cols: 3, rows: 2 },
   watch: { src: 'assets/runway/watches.png', cols: 3, rows: 2 },
   plane: { src: 'assets/runway/planes.png', cols: 3, rows: 2 },
-  stages: { src: 'assets/runway/stages.png', cols: 4, rows: 2 }
+  stages: { src: 'assets/runway/stages.png', cols: 4, rows: 2 },
+  hubs: { src: 'assets/runway/ui/hub-icons.png', cols: 3, rows: 2 }
 };
+const BANNERS = { hubs: { src: 'assets/runway/ui/hub-banners.png', pos: [10, 50, 90] }, social: { src: 'assets/runway/ui/social-banners.png', pos: [20, 80] } };
+function bannerHTML(key, idx) { const a = BANNERS[key]; return a && a.ok ? `<div class="banner" style="background-image:url(${a.src});background-position:center ${a.pos[idx]}%"></div>` : ''; }
 function preloadArt() {
   const sp = new Image(); sp.onload = () => $('title').classList.add('has-art'); sp.src = 'assets/runway/splash.png';
   const hr = new Image(); hr.onload = () => { $('hero').classList.add('has-art'); document.body.classList.add('ui-art'); if (S && !$('title').classList.contains('open')) refresh(); }; hr.src = 'assets/runway/ui/hero.png';
+  Object.values(BANNERS).forEach(a => { const im = new Image(); im.onload = () => { a.ok = true; if (S && !$('title').classList.contains('open')) refresh(); }; im.src = a.src; });
   Object.values(ART).forEach(a => {
     const im = new Image();
     im.onload = () => { a.ok = true; a.A = im.naturalWidth / im.naturalHeight; if (S && !$('title').classList.contains('open')) refresh(); };
@@ -55,7 +60,7 @@ function stageIdx() {
 
 /* ---------- state ---------- */
 let S = null;
-const UI = { panel: null, sub: { money: 'jobs', crazy: 'crime' }, niche: 'fashion', filter: 'all', cat: 'home' };
+const UI = { panel: null, sub: { money: 'jobs', crazy: 'crime', social: 'post' }, hub: null, cat: 'home' };
 let modalQueue = [];
 let C = null; // active contract
 
@@ -73,7 +78,7 @@ function newLife() {
     job: null, jobYears: 0, deg: false, college: null,
     biz: [], assets: [], invest: { savings: 0, index: 0, crypto: 0 },
     candidate: null, partner: null, kids: [], mom, dad,
-    jail: 0, record: 0, heat: 0, done: {}, ach: [], market: 1, log: [], peakNW: 0, xp: 0, hobbies: 0, trips: 0, goals: []
+    jail: 0, record: 0, heat: 0, done: {}, ach: [], market: 1, log: [], peakNW: 0, xp: 0, hobbies: 0, trips: 0, goals: [], social: socialInit()
   };
   S.log.push({ age: 0, items: [] });
   say('👶', `You were born in ${country.n} ${country.f} to a ${FAMILIES[tier].n} family.`, '');
@@ -99,6 +104,8 @@ const GOAL_POOL = [
   { id: 'inv', t: 'Invest some money', ok: s => s.age >= 18, chk: s => s.done.inv },
   { id: 'apply', t: 'Apply for a job', ok: s => s.age >= 14 && !s.job && !s.college, chk: s => s.done.apply },
   { id: 'viral', t: 'Post something outrageous', ok: s => s.age >= 13, chk: s => s.done.viral },
+  { id: 'post', t: 'Post on social media', ok: s => s.age >= 13, chk: s => s.done.post },
+  { id: 'hub', t: 'Work in your business hub', ok: s => s.biz.length > 0, chk: s => s.done.hub },
   { id: 'therapy', t: 'See a therapist', ok: s => s.age >= 14, chk: s => s.done.therapy }
 ];
 function genGoals() {
@@ -123,19 +130,14 @@ function salary() {
   if (S.college) p *= 0.5;
   return p;
 }
-function bizBase(b) { return BIZ[b.id].baseProfit * Math.pow(1.9, b.level - 1); }
 function contractMult(c, trapActive) {
   const termBonus = { 1: 1, 3: 1.04, 5: 1.08 }[c.term] || 1;
   let m = (c.share / 60) * termBonus * (c.excl ? 1.15 : 1) * (c.fee ? 1 : 0.97);
   if (c.trapId && !c.trapStruck) m *= TRAPS.find(t => t.id === c.trapId).mult;
   return m;
 }
-function bizEstimate(b) {
-  let m = contractMult(b.contract) * (1 - (b.dilution || 0));
-  if (b.termLeft <= 0) m *= 0.7;
-  return bizBase(b) * m * (0.85 + S.smarts / 400);
-}
-function bizValue(b) { return bizBase(b) * 4; }
+function bizEstimate(b) { return b.last ? Math.max(0, b.last.profit) : HUBS[b.id].cost * 0.2; }
+function bizValue(b) { return HUBS[b.id].value(b); }
 function assetValue(a) { return a.value; }
 function netWorth() {
   const inv = S.invest.savings + S.invest.index + S.invest.crypto;
@@ -157,6 +159,8 @@ function occupation() {
   if (S.jail > 0) return 'In prison';
   if (S.college) return 'University student';
   const j = jobDef(); if (j) return j.ladder[jobTier()];
+  if (S.social && S.social.celeb) return 'Celebrity';
+  if (S.social && S.social.followers >= 10000 && !S.biz.length) return 'Influencer';
   if (S.biz.length) return 'Entrepreneur';
   return S.age < 6 ? 'Toddler' : S.age < 18 ? 'Student' : 'Unemployed';
 }
@@ -164,7 +168,9 @@ function occupation() {
 /* ---------- achievements ---------- */
 const ACH = [
   { id: 'firstbiz', t: 'Founder — start a business', ok: () => S.biz.length >= 1 },
-  { id: 'tenbiz', t: 'Empire — own 10 businesses', ok: () => S.biz.length >= 10 },
+  { id: 'empire', t: 'Empire — run all 3 business types', ok: () => new Set(S.biz.map(b => b.id)).size >= 3 },
+  { id: 'viral', t: 'Went viral', ok: () => S.social && S.social.viral > 0 },
+  { id: 'star', t: 'Celebrity (1M followers)', ok: () => S.social && S.social.celeb },
   { id: 'mill', t: 'Millionaire', ok: () => netWorth() >= 1e6 },
   { id: 'bill', t: 'Billionaire', ok: () => netWorth() >= 1e9 },
   { id: 'married', t: 'Married', ok: () => S.partner && S.partner.married },
@@ -182,7 +188,7 @@ function checkAch() {
 
 /* ---------- save / load ---------- */
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
-function load() { try { const r = localStorage.getItem(SAVE_KEY); if (r) { S = JSON.parse(r); S.xp = S.xp || 0; S.hobbies = S.hobbies || 0; S.trips = S.trips || 0; S.goals = S.goals || []; return true; } } catch (e) { /* ignore */ } return false; }
+function load() { try { const r = localStorage.getItem(SAVE_KEY); if (r) { S = JSON.parse(r); S.xp = S.xp || 0; S.hobbies = S.hobbies || 0; S.trips = S.trips || 0; S.goals = S.goals || []; S.social = S.social || socialInit(); return true; } } catch (e) { /* ignore */ } return false; }
 
 /* ---------- modals ---------- */
 function showModal(m) {
@@ -213,7 +219,7 @@ const EVENTS = [
       { t: 'Say no', fn: () => say('🤝', 'You turned down your friend. Awkward.', '') }] });
   } },
   { ok: s => s.biz.length > 0, run() {
-    const b = pick(S.biz); const d = BIZ[b.id]; const offer = Math.round(bizValue(b) * 0.35);
+    const b = pick(S.biz); const d = HUBS[b.id]; const offer = Math.round(bizValue(b) * 0.35);
     showModal({ icon: '📈', title: 'Big Opportunity!', art: '<img src="assets/runway/ui/deal.png" alt="">', text: `An angel investor offers <b>${fmt(offer)}</b> for 15% of <b>${d.name}</b> profits.`, buttons: [
       { t: 'Accept', cls: 'gold', fn: () => { S.cash += offer; b.dilution = Math.min(0.6, (b.dilution || 0) + 0.15); say('📈', `You sold 15% of ${d.name} for ${fmt(offer)}.`, 'good'); } },
       { t: 'Decline', fn: () => say('📈', `You turned down the investor for ${d.name}.`, '') }] });
@@ -282,21 +288,25 @@ function ageUp() {
   const r = Math.random(); S.market = r < 0.15 ? 1.3 : r > 0.82 ? 0.7 : 1;
   if (S.biz.length && S.market !== 1) say(S.market > 1 ? '📈' : '📉', S.market > 1 ? 'The market is booming this year.' : 'A recession is squeezing business.', S.market > 1 ? 'good' : 'bad');
 
-  // businesses
+  // businesses: each hub turns the year you ran into a profit and loss
   S.biz.forEach(b => {
-    const d = BIZ[b.id]; const c = b.contract;
-    let p = bizEstimate(b) * S.market * rnd(0.75, 1.25);
+    const H = HUBS[b.id], c = b.contract, r = H.yearEnd(b);
+    let p = r.profit;
+    if (p > 0) p = p * contractMult(c) * (1 - (b.dilution || 0)) * (b.termLeft <= 0 ? 0.7 : 1);
     if (S.jail > 0) p *= 0.5;
-    if (chance(0.1 * d.risk) && S.market < 1.3) p = -bizBase(b) * 0.3;
-    if (c.trapId && !c.trapStruck && !c.revealed) { c.revealed = true; say('😬', `The fine print bit you: ${TRAPS.find(t => t.id === c.trapId).text.split(':')[0]} is cutting into ${d.name}.`, 'bad'); }
-    if (c.trapId === 'latepenalty' && !c.trapStruck && chance(0.2)) { const f = Math.round(d.cost * 0.25); S.cash -= f; say('😬', `Late-delivery penalty at ${d.name}: ${fmt(f)}.`, 'bad'); }
+    if (c.trapId && !c.trapStruck && !c.revealed) { c.revealed = true; say('😬', `The fine print bit you: ${TRAPS.find(t => t.id === c.trapId).text.split(':')[0]} is cutting into ${H.name}.`, 'bad'); }
     const net = p > 0 ? p * 0.8 : p; S.cash += net; income += Math.max(0, net); bizProfit += p;
-    say(d.icon, `${d.name} ${p >= 0 ? 'made' : 'lost'} ${fmt(Math.abs(net))}${p > 0 ? ' after tax' : ''}.`, p >= 0 ? 'good' : 'bad');
+    b.last = { rev: r.rev, exp: r.exp, profit: p, notes: r.notes };
+    say(H.icon, `${H.name}: ${p >= 0 ? 'profit' : 'loss'} ${fmt(Math.abs(net))}${p > 0 ? ' after tax' : ''}.`, p >= 0 ? 'good' : 'bad');
+    r.notes.slice(0, 3).forEach(n => say('📋', n, ''));
+    hlog(b, `Year result: ${fmt(p)} profit (${fmt(r.rev)} revenue).`);
+    b.ap = apMax(b);
     if (b.termLeft > 0) { b.termLeft--; if (b.termLeft === 0) {
-      if (c.trapId === 'autorenew' && !c.trapStruck) { b.termLeft = 3; say('😬', `The auto-renew clause locked ${d.name} in for 3 more years on bad terms.`, 'bad'); }
-      else say('📄', `Your contract for ${d.name} expired. Renew it in Money → Business or profits drop 30%.`, 'bad'); } }
+      if (c.trapId === 'autorenew' && !c.trapStruck) { b.termLeft = 3; say('😬', `The auto-renew clause locked ${H.name} in for 3 more years on bad terms.`, 'bad'); }
+      else say('📄', `Your contract for ${H.name} expired. Renew it in Money → Business or profits drop 30%.`, 'bad'); } }
   });
   if (bizProfit > 1e8) S.fame += 4; else if (bizProfit > 1e7) S.fame += 3; else if (bizProfit > 1e6) S.fame += 2; else if (bizProfit > 1e5) S.fame += 1;
+  socialYear();
 
   // investments
   const iv = S.invest;
@@ -335,7 +345,7 @@ function ageUp() {
   S.happy = clamp(S.happy + (S.cash > 5000 ? 1 : -2) + ri(-3, 3));
 
   // random event
-  if (chance(0.55)) { const pool = EVENTS.filter(e => e.ok(S)); if (pool.length) pick(pool).run(); }
+  if (!S.social.celeb && chance(0.55)) { const pool = EVENTS.filter(e => e.ok(S)); if (pool.length) pick(pool).run(); }
 
   // education choice at 18
   if (S.age === 18 && !S.college && !S.deg) {
@@ -391,6 +401,7 @@ function refresh() {
   $('nw').innerHTML = `${t.w}<br>NW ${fmt(netWorth())}`;
   $('meters').innerHTML = metersHTML();
   $('ageBtn').disabled = !S.alive;
+  document.body.classList.toggle('celeb', !!(S.social && S.social.celeb));
   document.querySelectorAll('.tabs [data-p]').forEach(b => b.classList.toggle('on', b.dataset.p === UI.panel));
   if (UI.panel) renderPanel();
 }
@@ -412,21 +423,24 @@ function tabs(group, list) { return `<div class="subtabs">${list.map(([k, l]) =>
 const locked = () => S.jail > 0 ? `<div class="note bad">⛓️ You are in prison for ${S.jail} more year(s). Most actions are unavailable.</div>` : '';
 
 function renderPanel() {
-  const money = { jobs: 'Careers', biz: 'Business Empire', assets: 'Asset Shop', invest: 'Invest' }[UI.sub.money];
-  const T = { money: [money, moneyHTML], love: ['Love & Family', loveHTML], crazy: ['Crazy', crazyHTML], status: ['Life & Goals', statusHTML] }[UI.panel];
+  const hubOpen = UI.panel === 'money' && UI.sub.money === 'biz' && UI.hub != null && S.biz[UI.hub];
+  const money = hubOpen ? HUBS[S.biz[UI.hub].id].name : { jobs: 'Careers', biz: 'Business Empire', invest: 'Invest' }[UI.sub.money];
+  const T = { money: [money, moneyHTML], social: ['Social Media', socialHTML], love: ['Love & Family', loveHTML], shop: ['Asset Shop', shopHTML], crazy: ['Crazy', crazyHTML], status: ['Life & Goals', statusHTML] }[UI.panel];
   $('sheetTitle').textContent = T[0];
   const y = $('sheetBody').scrollTop;
   $('sheetBody').innerHTML = locked() + T[1]();
   $('sheetBody').scrollTop = y;
 }
 
+function ribbonHTML() {
+  const inc = S.biz.reduce((t, b) => t + bizEstimate(b), 0) + salary() * 0.85;
+  return `<div class="ribbon"><div class="rb"><i class="coin-ic">$</i><b>${fmt(inc)}</b><small>/yr</small></div><div class="rb2"><b>${fmt(S.cash)}</b> 💵</div></div>`;
+}
 function moneyHTML() {
   const sub = UI.sub.money;
-  const inc = S.biz.reduce((t, b) => t + bizEstimate(b), 0) + salary() * 0.85;
-  const head = `<div class="ribbon"><div class="rb"><i class="coin-ic">$</i><b>${fmt(inc)}</b><small>/yr</small></div><div class="rb2"><b>${fmt(S.cash)}</b> 💵</div></div>` +
-    tabs('money', [['jobs', '💼 Jobs'], ['biz', '🏢 Business'], ['assets', '🛍️ Assets'], ['invest', '📊 Invest']]);
-  return head + ({ jobs: jobsHTML, biz: bizHTML, assets: assetsHTML, invest: investHTML }[sub])();
+  return ribbonHTML() + tabs('money', [['jobs', '💼 Jobs'], ['biz', '🏢 Business'], ['invest', '📊 Invest']]) + ({ jobs: jobsHTML, biz: bizHTML, invest: investHTML }[sub])();
 }
+function shopHTML() { return ribbonHTML() + assetsHTML(); }
 
 function jobsHTML() {
   const j = jobDef();
@@ -443,30 +457,46 @@ function jobsHTML() {
 }
 
 function bizHTML() {
+  if (UI.hub != null && S.biz[UI.hub]) return hubHTML(UI.hub);
   let h = '';
   if (S.biz.length) {
     h += '<h5>Your businesses</h5>';
     S.biz.forEach((b, i) => {
-      const d = BIZ[b.id], c = b.contract, up = Math.round(d.cost * Math.pow(2, b.level - 1) * 1.5);
-      const pct = b.level >= 10 ? 100 : Math.min(100, Math.floor(Math.max(0, S.cash) / up * 100));
-      h += `<div class="bcard"><div class="btile">${art('niches', NICHES.findIndex(n => n.id === d.niche), 56, d.icon)}<em>Lvl ${b.level}</em></div>
-        <div class="binfo"><b>${d.name}</b><div class="inc"><i class="coin-ic s">$</i>${fmt(bizEstimate(b))}/yr</div>
-        <div class="prog"><i style="width:${pct}%"></i><span>${b.level >= 10 ? 'MAX' : pct + '%'}</span></div>
-        <small>📄 ${c.cp} · ${c.share}% · ${b.termLeft > 0 ? b.termLeft + ' yr left' : '<b class="bad">EXPIRED</b>'}${c.excl ? ' · exclusive' : ''}${c.trapId && !c.trapStruck ? ' · ⚠️ fine print' : ''}</small></div>
-        <button class="gbtn" ${b.level < 10 && S.cash >= up ? '' : 'disabled'} data-a="upgrade" data-v="${i}">LEVEL UP<small>${b.level < 10 ? fmt(up) : 'MAX'}</small></button>
-        <div class="bmini"><button class="mini" data-a="renew" data-v="${i}">📄 ${b.termLeft > 0 ? 'Re-negotiate' : 'Renew'}</button><button class="mini" data-a="sell" data-v="${i}">Sell ${fmt(bizValue(b) * 0.8)}</button></div></div>`;
+      const H = HUBS[b.id], c = b.contract, up = Math.round(H.cost * Math.pow(2, b.level - 1) * 1.5);
+      h += `<div class="bcard"><div class="btile">${art('hubs', H.sprite, 56, H.icon)}<em>Lvl ${b.level}</em></div>
+        <div class="binfo"><b>${H.name}</b><div class="inc"><i class="coin-ic s">$</i>${b.last ? fmt(b.last.profit) + ' last year' : 'New business'}</div>
+        <small>⚡ ${b.ap}/${apMax(b)} actions left · 📄 ${c.cp} · ${c.share}% · ${b.termLeft > 0 ? b.termLeft + ' yr left' : '<b class="bad">EXPIRED</b>'}${c.trapId && !c.trapStruck ? ' · ⚠️ fine print' : ''}</small></div>
+        <button class="gbtn" data-a="openHub" data-v="${i}">OPEN HUB<small>⚡ ${b.ap}</small></button>
+        <div class="bmini"><button class="mini" ${b.level < 10 && S.cash >= up ? '' : 'disabled'} data-a="upgrade" data-v="${i}">⬆️ Level up ${b.level < 10 ? fmt(up) : 'MAX'}</button><button class="mini" data-a="renew" data-v="${i}">📄 ${b.termLeft > 0 ? 'Re-negotiate' : 'Renew'}</button><button class="mini" data-a="sell" data-v="${i}">Sell ${fmt(bizValue(b) * 0.8)}</button></div></div>`;
     });
   }
-  h += '<div class="plate sm">Start a business</div><div class="chips">' + NICHES.map(n => `<button class="${UI.niche === n.id ? 'on' : ''}" data-a="niche" data-v="${n.id}">${art('niches', NICHES.indexOf(n), 34, n.icon)}<small>${n.n}</small></button>`).join('') + '</div>';
-  h += `<div class="chips f">${['all', 'online', 'offline'].map(f => `<button class="${UI.filter === f ? 'on' : ''}" data-a="filter" data-v="${f}">${f}</button>`).join('')}</div>`;
+  h += '<div class="plate sm">Start a business</div>';
   const young = S.age < 16;
-  Object.keys(MODELS).map(m => BIZ[UI.niche + ':' + m]).filter(d => UI.filter === 'all' || (UI.filter === 'online') === d.online).forEach(d => {
-    const owned = S.biz.some(b => b.id === d.id);
-    h += `<div class="bcard ${young ? 'locked' : ''}"><div class="btile">${art('niches', NICHES.findIndex(n => n.id === d.niche), 56, d.icon)}<em>${d.online ? 'online' : 'offline'}</em></div>
-      <div class="binfo"><b>${d.name}</b><div class="inc"><i class="coin-ic s">$</i>~${fmt(d.baseProfit)}/yr</div><small>${d.modelName} · startup ${fmt(d.cost)}</small></div>
-      <button class="gbtn" ${owned || S.cash < d.cost || young || S.jail || S.biz.length >= 12 ? 'disabled' : ''} data-a="start" data-v="${d.id}">${owned ? 'OWNED' : 'SIGN'}<small>${fmt(d.cost)}</small></button>${young ? '<div class="lock">🔒 UNLOCK: AGE 16</div>' : ''}</div>`;
+  Object.values(HUBS).forEach(H => {
+    const owned = S.biz.some(b => b.id === H.id);
+    h += `<div class="bcard ${young ? 'locked' : ''}"><div class="btile">${art('hubs', H.sprite, 56, H.icon)}<em>${H.tag}</em></div>
+      <div class="binfo"><b>${H.name}</b><small>${H.blurb}</small></div>
+      <button class="gbtn" ${owned || S.cash < H.cost || young || S.jail ? 'disabled' : ''} data-a="start" data-v="${H.id}">${owned ? 'OWNED' : 'SIGN'}<small>${fmt(H.cost)}</small></button>${young ? '<div class="lock">🔒 UNLOCK: AGE 16</div>' : ''}</div>`;
   });
   return h;
+}
+function hubHTML(i) {
+  const b = S.biz[i], H = HUBS[b.id], defs = H.defs(b), mx = apMax(b);
+  const mets = H.metrics(b).map(m => `<div class="mt"><label>${m.l}</label><div class="bar"><i style="width:${clamp(m.p)}%;background:${hcol(m.p)}"></i></div><b>${m.v}</b></div>`).join('');
+  const tasks = H.list.map(id => {
+    const d = defs[id](), why = d.why || (b.ap < d.ap ? 'No actions left' : S.cash < d.cost ? 'Need ' + fmt(d.cost) : '');
+    return `<button class="task" ${why ? 'disabled' : ''} data-a="hubTask" data-v="${i}:${id}"><span class="ti">${d.icon}</span><b>${d.t}</b><small>${d.d}</small><em>${why || '⚡' + d.ap + (d.cost ? ' · ' + fmt(d.cost) : ' · free')}</em></button>`;
+  }).join('');
+  const L = b.last;
+  return `<button class="back" data-a="closeHub">← All businesses</button>
+    ${bannerHTML('hubs', H.banner)}
+    <div class="hubhead"><div><b>${H.icon} ${H.name}</b> <i class="tag">Lvl ${b.level}</i><small>${H.blurb}</small></div><div class="aps">${apPips(b.ap, mx)}<small>actions left this year</small></div></div>
+    <div class="metrics">${mets}</div>
+    <button class="btn big teal" ${b.ap < 1 ? 'disabled' : ''} data-a="hubPhone" data-v="${i}">📞 Take a call (⚡1)</button>
+    <h5>Tasks</h5><div class="tasks">${tasks}</div>
+    ${H.extra(b, i)}
+    <h5>Last year</h5>${L ? `<div class="card ${L.profit >= 0 ? 'gold' : ''}"><b>${L.profit >= 0 ? 'Profit' : 'Loss'} ${fmt(L.profit)}</b><small>Revenue ${fmt(L.rev)} · Costs ${fmt(L.exp)}</small>${L.notes.map(n => `<small>• ${n}</small>`).join('')}</div>` : '<div class="note">Age up to see your first year results. Your tasks decide them.</div>'}
+    <h5>Hub log</h5>${(b.log || []).length ? (b.log || []).map(m => `<div class="logline">${m}</div>`).join('') : '<div class="note">Nothing yet.</div>'}`;
 }
 
 function assetsHTML() {
@@ -553,14 +583,26 @@ const A = {
   quit() { say('💼', `You quit your job as ${occupation()}.`, ''); S.job = null; S.jobYears = 0; save(); refresh(); renderFeed(); },
   start(id) { openContract(id, 'start'); },
   renew(i) { openContract(S.biz[i].id, 'renew', i); },
+  openHub(i) { UI.hub = +i; refresh(); },
+  closeHub() { UI.hub = null; refresh(); },
+  hubTask(v) {
+    const [i, id, arg] = v.split(':'), b = S.biz[+i]; if (!b) return;
+    const mk = HUBS[b.id].defs(b)[id]; if (!mk) return;
+    const d = mk(arg); if (d.why || b.ap < d.ap || S.cash < d.cost) return;
+    b.ap -= d.ap; S.cash -= d.cost; S.done.hub = true;
+    const msg = d.run(); if (msg) { hlog(b, msg); toast(msg); }
+    S.fame = Math.max(S.fame, socialFame()); save(); refresh();
+  },
+  hubPhone(i) { const b = S.biz[+i]; if (!b || b.ap < 1) return; b.ap--; S.done.hub = true; hubCall(b); },
   upgrade(i) {
-    const b = S.biz[i]; const up = Math.round(BIZ[b.id].cost * Math.pow(2, b.level - 1) * 1.5);
-    if (S.cash < up) return; S.cash -= up; b.level++; S.done.upg = true; S.xp += 10 * b.level; say(BIZ[b.id].icon, `You expanded ${BIZ[b.id].name} to level ${b.level}.`, 'good'); S.fame += 0.5; checkAch(); save(); refresh(); renderFeed();
+    const b = S.biz[i], H = HUBS[b.id], up = Math.round(H.cost * Math.pow(2, b.level - 1) * 1.5);
+    if (S.cash < up || b.level >= 10) return; S.cash -= up; b.level++; b.ap += 1; S.done.upg = true; S.xp += 10 * b.level;
+    say(H.icon, `You expanded ${H.name} to level ${b.level}.`, 'good'); S.fame += 0.5; checkAch(); save(); refresh(); renderFeed();
   },
   sell(i) {
-    const b = S.biz[i]; let v = bizValue(b) * 0.8;
-    if (b.termLeft > 0 && b.contract.fee) { const f = BIZ[b.id].cost * 0.3; v -= f; say('📄', `Early termination fee: ${fmt(f)}.`, 'bad'); }
-    S.cash += v; say('🤝', `You sold ${BIZ[b.id].name} for ${fmt(v)}.`, ''); S.biz.splice(i, 1); save(); refresh(); renderFeed();
+    const b = S.biz[i], H = HUBS[b.id]; let v = bizValue(b) * 0.8;
+    if (b.termLeft > 0 && b.contract.fee) { const f = H.cost * 0.3; v -= f; say('📄', `Early termination fee: ${fmt(f)}.`, 'bad'); }
+    S.cash += v; say('🤝', `You sold ${H.name} for ${fmt(v)}.`, ''); S.biz.splice(i, 1); UI.hub = null; save(); refresh(); renderFeed();
   },
   buy(i) {
     const it = ASSETS[UI.cat].items[i]; if (S.cash < it.price) return;
@@ -627,6 +669,8 @@ const A = {
   restart() { showModal({ icon: '⚠️', title: 'Start over?', text: 'This ends your current life and starts a new one.', buttons: [{ t: 'New life', cls: 'bad', fn: () => { newLife(); closePanel(); renderFeed(); refresh(); } }, { t: 'Cancel' }] }); }
 };
 
+Object.assign(A, SA);
+
 /* ---------- immersive contract signing ---------- */
 const REP_LINES = {
   open: ['Let\'s keep this quick. I have another meeting at three.', 'Read it carefully. Or don\'t. Most people don\'t.', 'Standard terms. Take it or leave it.'],
@@ -636,7 +680,7 @@ const REP_LINES = {
 };
 
 function openContract(defId, mode, idx) {
-  const d = BIZ[defId]; const m = MODELS[d.model];
+  const d = HUBS[defId]; const m = d;
   const old = mode === 'renew' ? S.biz[idx] : null;
   C = {
     d, mode, idx, cp: pick(COMPANIES) + ' ' + pick(['Ltd.', 'LLC', 'GmbH', 'Inc.', 'S.A.']), rep: pick(REPS),
@@ -649,7 +693,7 @@ function openContract(defId, mode, idx) {
     <div class="paper">
       <div class="lh"><b>${C.cp}</b><span class="seal">⚖️</span></div>
       <h3>${m.kind.toUpperCase()}</h3>
-      <p class="pre">This Agreement is entered into between <b>${S.name}</b> ("Operator") and <b>${C.cp}</b> ("${m.partner}"), represented by ${C.rep}, for the operation of <b>${d.name}</b> (${d.nicheName}).</p>
+      <p class="pre">This Agreement is entered into between <b>${S.name}</b> ("Operator") and <b>${C.cp}</b> ("${m.partner}"), represented by ${C.rep}, for the operation of <b>${d.name}</b> (${d.tag} business).</p>
       <div id="cClauses"></div>
       <div id="cFine"></div>
       <div class="sig"><canvas id="cCanvas" width="600" height="120"></canvas><span class="x">✗</span><button class="link" id="cClear">clear</button></div>
@@ -675,8 +719,8 @@ function drawContract() {
   $('cFine').innerHTML = `<div class="fine ${c.trapRead ? 'read' : ''}"><small>Fine print: ${c.trapId ? (c.trapRead ? `<mark>${trap.text}</mark>` : `<span class="blur">${trap.text}</span>`) : 'Standard boilerplate. Nothing unusual.'}</small></div>
     ${c.trapRead && c.trapId && !c.trapStruck ? '<button class="link" data-c="strike">✂️ strike this clause</button>' : ''}${c.trapRead && c.trapStruck ? '<small class="g">Clause struck ✔</small>' : ''}
     ${c.trapRead ? '' : '<button class="link" data-c="read">🔍 read the fine print</button>'}`;
-  const est = BIZ[c.d.id].baseProfit * Math.pow(1.9, c.level - 1) * contractMult({ share: c.share, term: c.term, excl: c.excl, fee: c.fee, trapId: c.trapId, trapStruck: c.trapStruck }) * (1 - c.dilution) * (0.85 + S.smarts / 400);
-  $('cSum').innerHTML = `Upfront <b>${fmt(c.cost)}</b> · Est. profit <b class="g">${fmt(est)}/yr</b> · Cash ${fmt(S.cash)}`;
+  const mult = contractMult({ share: c.share, term: c.term, excl: c.excl, fee: c.fee, trapId: c.trapId, trapStruck: c.trapStruck }) * (1 - c.dilution);
+  $('cSum').innerHTML = `Upfront <b>${fmt(c.cost)}</b> · Profit multiplier <b class="${mult >= 1 ? 'g' : 'bad'}">×${mult.toFixed(2)}</b> · Cash ${fmt(S.cash)}`;
   document.querySelectorAll('#cClauses [data-c], #cFine [data-c]').forEach(el => { el.onclick = () => contractAct(el.dataset.c, el.dataset.v); });
 }
 
@@ -714,7 +758,7 @@ function signContract() {
   setTimeout(() => {
     const contract = { cp: c.cp, share: c.share, term: c.term, excl: c.excl, fee: c.fee, trapId: c.trapId, trapStruck: c.trapStruck, revealed: c.trapRead };
     if (c.mode === 'start') {
-      S.cash -= c.cost; S.done.sign = true; S.biz.push({ id: c.d.id, level: 1, termLeft: c.term, contract, dilution: 0 });
+      S.cash -= c.cost; S.done.sign = true; const nb = { id: c.d.id, level: 1, termLeft: c.term, contract, dilution: 0, ap: 0, log: [], last: null }; HUBS[nb.id].init(nb); nb.ap = apMax(nb); S.biz.push(nb); UI.hub = S.biz.length - 1; UI.panel = 'money'; UI.sub.money = 'biz'; $('sheet').classList.add('open');
       say('✍️', `You signed with ${c.cp} and launched ${c.d.name} for ${fmt(c.cost)}.`, 'gold');
     } else { const b = S.biz[c.idx]; b.contract = contract; b.termLeft = c.term; S.done.sign = true; say('✍️', `You signed a new ${c.term}-year contract with ${c.cp} for ${c.d.name}.`, 'gold'); }
     checkAch(); save(); closeContract(); renderFeed();

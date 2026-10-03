@@ -44,11 +44,14 @@
 
   <nav class="tabs">
     <button data-p="money"><span>💰</span>Money</button>
+    <button data-p="social"><span>📱</span>Social</button>
     <button data-p="love"><span>❤️</span>Love</button>
     <button class="age" id="ageBtn" aria-label="Age one year"><b>AGE</b><small>+1 year</small></button>
+    <button data-p="shop"><span>🛍️</span>Shop</button>
     <button data-p="crazy"><span>😈</span>Crazy</button>
     <button data-p="status"><span>👑</span>Status</button>
   </nav>
+  <div class="toast" id="toast" role="status"></div>
 </div>
 
 <!-- generic modal / events -->
@@ -73,6 +76,8 @@
 </div>
 
 <script src="data.js"></script>
+<script src="hubs.js"></script>
+<script src="social.js"></script>
 <script src="game.js"></script>
 </body>
 </html>
