@@ -714,9 +714,11 @@ function loveHTML() {
   return h;
 }
 
+const actRow = (a) => `<div class="row"><span class="ic">${a.icon}</span><div class="grow"><b>${a.n}</b><small>${a.cost ? fmt(a.cost) : 'Free'} · ${a.fx}</small></div><button class="btn sm" ${S.age >= a.minAge && S.cash >= a.cost && !S.done[a.id] && !S.jail ? '' : 'disabled'} data-a="fun" data-v="${a.id}">${S.age < a.minAge ? a.minAge + '+' : S.done[a.id] ? 'Done' : 'Do it'}</button></div>`;
 function crazyHTML() {
-  const head = tabs('crazy', [['fun', '🎯 Activities'], ['crime', '😈 Crime']]);
-  if (UI.sub.crazy === 'fun') return head + ACT_GROUPS.map(([gk, gl]) => `<h5>${gl}</h5>` + ACTIVITIES.filter(a => a.grp === gk).map(a => `<div class="row"><span class="ic">${a.icon}</span><div class="grow"><b>${a.n}</b><small>${a.cost ? fmt(a.cost) : 'Free'} · ${a.fx}</small></div><button class="btn sm" ${S.age >= a.minAge && S.cash >= a.cost && !S.done[a.id] && !S.jail ? '' : 'disabled'} data-a="fun" data-v="${a.id}">${S.age < a.minAge ? a.minAge + '+' : S.done[a.id] ? 'Done' : 'Do it'}</button></div>`).join('')).join('');
+  const head = tabs('crazy', [['fun', '🎯 Activities'], ['casino', '🎰 Casino'], ['crime', '😈 Crime']]);
+  if (UI.sub.crazy === 'casino') return head + casinoHTML();
+  if (UI.sub.crazy === 'fun') return head + ACT_GROUPS.map(([gk, gl]) => `<h5>${gl}</h5>` + ACTIVITIES.filter(a => a.grp === gk).map(actRow).join('')).join('');
   return head + `<div class="note">Heat: ${S.heat} · Record: ${S.record} arrest(s). Higher heat means more risk. Heat halves each year.</div>` + CRIMES.map(c => {
     const why = S.age < c.minAge ? c.minAge + '+' : c.smarts && S.smarts < c.smarts ? 'Smarts ' + c.smarts : c.biz && !S.biz.length ? 'Needs business' : c.cash && S.cash < c.cash ? 'Needs cash' : '';
     return `<div class="row"><span class="ic">${c.icon}</span><div class="grow"><b>${c.n}</b><small>${fmt(c.reward[0])}–${fmt(c.reward[1])} · risk ~${Math.round((c.risk + S.heat * 0.03) * 100)}%</small></div><button class="btn sm bad" ${why || S.jail ? 'disabled' : ''} data-a="crime" data-v="${c.id}">${why || 'Try'}</button></div>`;
@@ -977,6 +979,7 @@ function signContract() {
 }
 
 /* ---------- boot ---------- */
+Object.assign(A, CASINO_ACTS);
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-a]'); if (el && A[el.dataset.a]) A[el.dataset.a](el.dataset.v, el);
   const p = e.target.closest('[data-p]'); if (p) { UI.panel === p.dataset.p ? closePanel() : openPanel(p.dataset.p); }

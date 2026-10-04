@@ -228,8 +228,11 @@ function socialHTML() {
     <div class="stats3"><div><b>${fmtN(F)}</b><small>followers</small></div><div><b>${socialTitle()}</b><small>${s.celeb ? '⭐ celebrity' : 'status'}</small></div><div><b>${mood[0]}</b><small>${mood[1]}</small></div></div>
     <div class="sb"><label>Reputation</label><div class="bar"><i style="width:${s.rep}%;background:${hcol(s.rep)}"></i></div><b>${Math.round(s.rep)}</b></div>
     <small class="meta">Trend this year: <b>#${s.trend}</b> ${ENERGY_ON ? ' · Actions left ' + apPips(s.ap, socialApMax()) : ''}${s.cancelled ? ' · <b class="bad">cancelled</b>' : ''}</small>
-    ${tabs('social', [['post', '📸 Post'], ['deals', '💼 Deals' + (s.offers.length ? ' (' + s.offers.length + ')' : '')], ['celeb', '⭐ Celebrity']])}`;
-  return head + ({ post: postHTML, deals: dealsHTML, celeb: celebHTML }[sub])();
+    ${tabs('social', [['post', '📸 Post'], ['deals', '💼 Deals' + (s.offers.length ? ' (' + s.offers.length + ')' : '')], ['celeb', '⭐ Celebrity'], ['boost', '🔥 Boost']])}`;
+  return head + ({ post: postHTML, deals: dealsHTML, celeb: celebHTML, boost: boostHTML }[sub])();
+}
+function boostHTML() {                                               // fame-buying activities (moved here from Activities)
+  return '<div class="note">Spend money to boost your name.</div>' + ACTIVITIES.filter(a => a.grp === 'fame').map(actRow).join('');
 }
 function postHTML() {
   const s = S.social, hasDeal = s.deals.some(d => d.done < d.posts);
