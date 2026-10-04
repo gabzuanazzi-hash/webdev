@@ -65,15 +65,11 @@ function art(key, idx, B, fb) {
 /* ---------- profile characters ---------- */
 const AVATARS = [
   { k: 'classic', n: 'Classic', who: 'Everyone' },
-  { k: 'auburn', n: 'Ruby', who: 'Woman', src: 'assets/avatars/auburn.webp' },
-  { k: 'brown', n: 'Ben', who: 'Man', src: 'assets/avatars/brown.webp' },
-  { k: 'bob', n: 'Mei', who: 'Woman', src: 'assets/avatars/bob.webp' },
-  { k: 'fade', n: 'Marcus', who: 'Man', src: 'assets/avatars/fade.webp' },
-  { k: 'amara', n: 'Amara', who: 'Woman', src: 'assets/avatars/amara.webp', t: 1 }, { k: 'diego', n: 'Diego', who: 'Man', src: 'assets/avatars/diego.webp', t: 1 },
-  { k: 'yuki', n: 'Yuki', who: 'Woman', src: 'assets/avatars/yuki.webp', t: 1 }, { k: 'kenji', n: 'Kenji', who: 'Man', src: 'assets/avatars/kenji.webp', t: 1 },
-  { k: 'priya', n: 'Priya', who: 'Woman', src: 'assets/avatars/priya.webp', t: 1 }, { k: 'omar', n: 'Omar', who: 'Man', src: 'assets/avatars/omar.webp', t: 1 },
-  { k: 'sofia', n: 'Sofia', who: 'Woman', src: 'assets/avatars/sofia.webp', t: 1 }, { k: 'liam', n: 'Liam', who: 'Man', src: 'assets/avatars/liam.webp', t: 1 },
-  { k: 'olga', n: 'Olga', who: 'Woman', src: 'assets/avatars/olga.webp', t: 1 }, { k: 'noah', n: 'Noah', who: 'Man', src: 'assets/avatars/noah.webp', t: 1 }
+  { k: 'amara', n: 'Amara', who: 'Woman', src: 'assets/avatars/amara.webp', fb: 'assets/wardrobe/body-amara.webp', t: 1 }, { k: 'diego', n: 'Diego', who: 'Man', src: 'assets/avatars/diego.webp', fb: 'assets/wardrobe/body-diego.webp', t: 1 },
+  { k: 'yuki', n: 'Yuki', who: 'Woman', src: 'assets/avatars/yuki.webp', fb: 'assets/wardrobe/body-yuki.webp', t: 1 }, { k: 'kenji', n: 'Kenji', who: 'Man', src: 'assets/avatars/kenji.webp', fb: 'assets/wardrobe/body-kenji.webp', t: 1 },
+  { k: 'priya', n: 'Priya', who: 'Woman', src: 'assets/avatars/priya.webp', fb: 'assets/wardrobe/body-priya.webp', t: 1 }, { k: 'omar', n: 'Omar', who: 'Man', src: 'assets/avatars/omar.webp', fb: 'assets/wardrobe/body-omar.webp', t: 1 },
+  { k: 'sofia', n: 'Sofia', who: 'Woman', src: 'assets/avatars/sofia.webp', fb: 'assets/wardrobe/body-sofia.webp', t: 1 }, { k: 'liam', n: 'Liam', who: 'Man', src: 'assets/avatars/liam.webp', fb: 'assets/wardrobe/body-liam.webp', t: 1 },
+  { k: 'olga', n: 'Olga', who: 'Woman', src: 'assets/avatars/olga.webp', fb: 'assets/wardrobe/body-olga.webp', t: 1 }, { k: 'noah', n: 'Noah', who: 'Man', src: 'assets/avatars/noah.webp', fb: 'assets/wardrobe/body-noah.webp', t: 1 }
 ];
 const avatarOf = () => AVATARS.find(a => a.k === (S && S.avatar)) || AVATARS[0];
 function avatarImg(av, idx, B) {                       // idx = life stage 0..7 (baby..ghost), 4x2 atlas of 192px cells; drawn at 80% so the figure sits centred with a margin
@@ -312,7 +308,7 @@ function checkAch() {
 
 /* ---------- save / load ---------- */
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
-function load() { try { const r = localStorage.getItem(SAVE_KEY); if (r) { S = JSON.parse(r); if (!S.avatar || !AVATARS.some(v => v.k === S.avatar && v.src)) S.avatar = pick(AVATARS.slice(1)).k; if (S.carSpend == null) S.carSpend = (S.assets || []).filter(a => a.cat === 'car').reduce((s, a) => s + (a.price || 0), 0); S.xp = S.xp || 0; S.hobbies = S.hobbies || 0; S.trips = S.trips || 0; S.goals = S.goals || []; S.social = S.social || socialInit(); S.payments = S.payments || []; return true; } } catch (e) { /* ignore */ } return false; }
+function load() { try { const r = localStorage.getItem(SAVE_KEY); if (r) { S = JSON.parse(r); if (!S.avatar || !AVATARS.some(v => v.k === S.avatar && v.fb)) S.avatar = pick(AVATARS.slice(1)).k; if (S.carSpend == null) S.carSpend = (S.assets || []).filter(a => a.cat === 'car').reduce((s, a) => s + (a.price || 0), 0); S.xp = S.xp || 0; S.hobbies = S.hobbies || 0; S.trips = S.trips || 0; S.goals = S.goals || []; S.social = S.social || socialInit(); S.payments = S.payments || []; return true; } } catch (e) { /* ignore */ } return false; }
 
 /* ---------- modals ---------- */
 function showModal(m) {
@@ -570,7 +566,7 @@ function moneyHTML() {
 }
 function shopHTML() {
   const sub = UI.sub.shop || 'shop';
-  return ribbonHTML() + tabs('shop', [['shop', '🛍️ Shop'], ['mine', `🎒 My stuff (${S.assets.length})`]]) + (sub === 'mine' ? stuffHTML() : assetsHTML());
+  return ribbonHTML() + tabs('shop', [['shop', '🛍️ Shop'], ['fashion', '👗 Fashion'], ['mine', `🎒 My stuff (${S.assets.length})`]]) + (sub === 'mine' ? stuffHTML() : sub === 'fashion' ? fashionHTML() : assetsHTML());
 }
 
 function jobsHTML() {
@@ -751,7 +747,7 @@ function statusHTML() {
   const power = Math.round(clamp(Math.log10(Math.max(10, nw)) * 10 + S.biz.length * 3 + S.fame * 0.3 - 20));
   const claimable = S.goals.some(g => g.done && !g.claimed);
   return `<div class="lvlhead"><div class="lv">👑 LEVEL ${level()}</div><div class="xpbar"><i style="width:${xp / 3}%"></i><span>XP ${xp}/300</span></div></div>
-    <div class="card gold"><b>${stageIcon()} ${S.name}</b><br>${S.flag} ${S.country} · born into a ${FAMILIES[S.tier].n} family<br>Net worth <b>${fmt(nw)}</b> (${t.w}) · ${t.f}<br>🍀 Luck <b>${Math.round(luckV())}</b> · ☯️ Karma <b>${(S.karma || 0) >= 0 ? '+' : ''}${Math.round(S.karma || 0)}</b></div>
+    <div class="card gold">${S.age >= 4 ? `<span class="wdside">${wdFigure(64)}</span>` : ''}<b>${stageIcon()} ${S.name}</b><br>${S.flag} ${S.country} · born into a ${FAMILIES[S.tier].n} family<br>Net worth <b>${fmt(nw)}</b> (${t.w}) · ${t.f}<br>🍀 Luck <b>${Math.round(luckV())}</b> · ☯️ Karma <b>${(S.karma || 0) >= 0 ? '+' : ''}${Math.round(S.karma || 0)}</b></div>
     <div class="tiles">${lifeTiles().map(x => `<div class="tile"><b>${x.n}</b><div class="ring" style="--p:${x.p}"><span class="lic" style="background-image:url(assets/runway/ui/${x.ico}.png)">${x.e}</span></div>${x.p}%<br><span class="lvb">Lvl ${x.lv}</span></div>`).join('')}</div>
     <div class="goals"><h4>Yearly Goals</h4>${S.goals.map(g => `<div class="goal ${g.done ? 'done' : ''} ${g.claimed ? 'claimed' : ''}"><span class="cb">${g.done ? '✓' : ''}</span>${g.t}<span class="rw">${rewardText(g)}</span></div>`).join('') || '<div class="goal">No goals right now.</div>'}
       <button class="btn big gold" data-a="claim" ${claimable ? '' : 'disabled'}>Claim Reward</button></div>
@@ -995,7 +991,7 @@ function signContract() {
 }
 
 /* ---------- boot ---------- */
-Object.assign(A, CASINO_ACTS);
+Object.assign(A, CASINO_ACTS, WARDROBE_ACTS);
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-a]'); if (el && A[el.dataset.a]) A[el.dataset.a](el.dataset.v, el);
   const p = e.target.closest('[data-p]'); if (p) { UI.panel === p.dataset.p ? closePanel() : openPanel(p.dataset.p); }

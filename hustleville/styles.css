@@ -457,3 +457,11 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 @keyframes scpop{from{transform:scale(.85);opacity:0}}
 .scturn{font-size:12px;opacity:.7}.scopts{width:100%;display:flex;flex-direction:column;gap:7px;min-height:150px}
 .scopt{width:100%;text-align:left;padding:9px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.07);color:#fff;cursor:pointer}.scopt:hover{background:rgba(255,255,255,.15)}.scopt b{display:block;font-size:13px;color:#ffd45e;margin-bottom:2px}.scopt span{font-size:14px}
+
+/* wardrobe */
+.wdroom{display:flex;gap:12px;align-items:center;padding:10px;margin:8px 0;border-radius:14px;background:radial-gradient(ellipse at 50% 80%,#2a3f78,#12204a);border:1px solid rgba(255,255,255,.15)}
+.wdstage{flex:0 0 auto}.wdfig{position:relative;display:inline-block}.wdfig img{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+.wdinfo{display:flex;flex-direction:column;gap:6px;min-width:0}.wdinfo small{opacity:.8}
+.wdslots{display:flex;flex-wrap:wrap;gap:5px}.wdslot{padding:4px 9px;border-radius:99px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;font-size:11px;cursor:pointer}.wdslot span{opacity:.6;margin-right:4px}
+.wdcard .wdthumb{display:block;width:84px;height:84px;margin:0 auto 4px;background:center/contain no-repeat;border-radius:10px;background-color:rgba(255,255,255,.06)}
+.wdside{float:right;margin:-6px -2px 0 8px}
