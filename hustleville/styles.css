@@ -362,3 +362,15 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 .fxo button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;border-radius:9px;border:1px solid rgba(255,255,255,.2);background:#1d2f58;color:#fff;font-size:11px;cursor:pointer}.fxo button b{color:#f5c542;font-size:14px}
 .fxo button.on{background:#1f9d55;border-color:#9ff0c0}.fxo button.won{background:#1f6d3f}.fxo button.lost{opacity:.45}
 .slip{margin:10px 0;padding:10px;border-radius:12px;border:2px solid #f5c542;background:rgba(245,197,66,.08)}.slip small{display:block;margin:2px 0}.slipt{margin:8px 0}
+
+.chiprack{display:flex;gap:2px;overflow-x:auto;padding:8px 2px 12px;margin:4px 0;border-radius:14px;background:linear-gradient(#0b3d26,#082c1c);box-shadow:inset 0 2px 8px rgba(0,0,0,.6),0 0 0 2px #6b4a1c}
+.chipb{flex:0 0 auto;background:none;border:0;padding:2px 3px;cursor:pointer;color:#e8f5e8;display:flex;flex-direction:column;align-items:center;gap:1px;transition:transform .15s,filter .15s;-webkit-tap-highlight-color:transparent}
+.chipb small{font-size:9px;opacity:.8}.chipb:hover{transform:translateY(-3px)}.chipb:active{transform:translateY(1px) scale(.95)}
+.chipb.on{transform:translateY(-8px) scale(1.12);filter:drop-shadow(0 0 8px #f5c542)}.chipb.on small{color:#f5c542;opacity:1;font-weight:700}.chipb:disabled{opacity:.3;filter:grayscale(.7);cursor:default}
+.chipsvg{display:block;filter:drop-shadow(0 3px 3px rgba(0,0,0,.5))}
+.betbox{display:flex;align-items:flex-end;gap:14px;justify-content:center;margin:6px 0 10px;min-height:96px;padding:8px;border-radius:14px;background:radial-gradient(ellipse at 50% 90%,#116b3f,#0a3d25);border:1px solid rgba(255,255,255,.12)}
+.betlbl{text-align:center}.betlbl small{display:block;opacity:.7;letter-spacing:1px}.betlbl b{font-size:22px;color:#f5c542}
+.stack{position:relative;width:62px;height:84px}.stack span{position:absolute;display:block;animation:chipdrop .28s both cubic-bezier(.3,1.6,.5,1)}.stackempty{opacity:.5;align-self:center}
+@keyframes chipdrop{from{transform:translateY(-26px) scale(1.15);opacity:0}to{transform:none;opacity:1}}
+.chips2{display:none}
+.chiprack{justify-content:space-between;overflow-x:auto}.chipb{padding:2px 1px}

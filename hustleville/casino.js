@@ -130,6 +130,32 @@ function sportsHTML() {
   return h;
 }
 
+/* ---------- chips ---------- */
+const CHIP_COL = { 100: ['#2f6fe0', '#1b3f8f'], 500: ['#8a4bd1', '#512a85'], 1000: ['#d93a3a', '#8f1f1f'], 5000: ['#1fa05a', '#0f6636'], 25000: ['#2a2d3a', '#0d0f16'], 100000: ['#e8872a', '#9a4c0b'], 1000000: ['#f1c53d', '#a67a0c'], all: ['#f1c53d', '#a67a0c'] };
+const chipLbl = (v) => v === 'all' ? 'ALL' : v >= 1e6 ? v / 1e6 + 'M' : v >= 1000 ? v / 1000 + 'K' : '' + v;
+function chipSvg(v, px) {                                              // a casino chip: coloured body, white edge spots, inlay ring, value in the middle
+  const [a, b] = CHIP_COL[v] || CHIP_COL[100], dark = v === 1000000 || v === 'all', ink = dark ? '#5b3d00' : '#fff', id = 'cg' + String(v), l = chipLbl(v);
+  return `<svg class="chipsvg" width="${px}" height="${px}" viewBox="0 0 100 100"><defs><radialGradient id="${id}" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></radialGradient></defs>
+    <circle cx="50" cy="52" r="47" fill="rgba(0,0,0,.35)"/><circle cx="50" cy="50" r="47" fill="url(#${id})" stroke="${b}" stroke-width="2"/>
+    <circle cx="50" cy="50" r="41" fill="none" stroke="#fff" stroke-width="11" stroke-dasharray="10.7 10.7" opacity=".92"/>
+    <circle cx="50" cy="50" r="33" fill="url(#${id})" stroke="${dark ? '#fff7d6' : '#fff'}" stroke-width="1.6" stroke-dasharray="${dark ? '0' : '3 2.5'}"/>
+    <circle cx="50" cy="50" r="27" fill="none" stroke="${ink}" stroke-opacity=".45" stroke-width="1"/>
+    <text x="50" y="${l.length > 3 ? 56 : 57}" text-anchor="middle" font-family="Lilita One,Fredoka,sans-serif" font-size="${l.length > 3 ? 17 : l.length > 2 ? 21 : 25}" fill="${ink}" stroke="rgba(0,0,0,.25)" stroke-width=".6">${l}</text>
+    <ellipse cx="38" cy="30" rx="16" ry="7" fill="#fff" opacity=".18" transform="rotate(-30 38 30)"/></svg>`;
+}
+function betStack(amount) {                                            // the bet as a pile of chips (greedy by denomination, capped for space)
+  let left = Math.round(amount), out = [];
+  for (const d of CAS_CHIPS.slice().reverse()) { while (left >= d && out.length < 14) { out.push(d); left -= d; } }
+  if (!out.length) return '<div class="stackempty">No bet</div>';
+  return `<div class="stack" key="${amount}">${out.reverse().map((d, i) => `<span style="bottom:${i * 6}px;left:${(i % 2) * 3}px;animation-delay:${i * 35}ms">${chipSvg(d, 54)}</span>`).join('')}</div>`;
+}
+let casAudio = null;
+function casClick(f) {                                                 // tiny synthesized chip clack
+  try { casAudio = casAudio || new (window.AudioContext || window.webkitAudioContext)(); const o = casAudio.createOscillator(), g = casAudio.createGain(), t = casAudio.currentTime;
+    o.type = 'triangle'; o.frequency.setValueAtTime(f || 1400, t); o.frequency.exponentialRampToValueAtTime(500, t + 0.07); g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+    o.connect(g); g.connect(casAudio.destination); o.start(t); o.stop(t + 0.1); } catch (e) { /* audio unavailable */ }
+}
+
 /* ---------- casino shell ---------- */
 function casinoHTML() {
   if (S.age < CAS_MIN_AGE) return `<div class="note">🎰 The casino is 21+. Come back at ${CAS_MIN_AGE}.</div>`;
@@ -138,17 +164,18 @@ function casinoHTML() {
   return `<div class="casbanner" style="background-image:url(assets/casino/${{ rou: 'roulette', bj: 'blackjack', spt: 'sports' }[u.game]}.webp)"><span>${gm.find(g => g[0] === u.game)[1]}</span></div>
     <div class="stats3"><div><b>${fmt(S.cash)}</b><small>wallet</small></div><div><b class="${c.net < 0 ? 'bad' : 'good'}">${c.net < 0 ? '−' : '+'}${fmt(Math.abs(c.net))}</b><small>net result</small></div><div><b>${fmt(casBet())}</b><small>bet size</small></div></div>
     <div class="subtabs cas">${gm.map(([k, l]) => `<button class="${u.game === k ? 'on' : ''}" data-a="casGame" data-v="${k}">${l}</button>`).join('')}</div>
-    <div class="chips2">${CAS_CHIPS.map(v => `<button class="chip c${String(v).length} ${u.bet === v ? 'on' : ''}" ${S.cash < v ? 'disabled' : ''} data-a="casChip" data-v="${v}">${fmt(v)}</button>`).join('')}<button class="chip all" data-a="casChip" data-v="${Math.max(100, Math.floor(S.cash))}">ALL IN</button></div>
+    <div class="chiprack">${CAS_CHIPS.map(v => `<button class="chipb ${u.bet === v ? 'on' : ''}" ${S.cash < v ? 'disabled' : ''} data-a="casChip" data-v="${v}" title="${fmt(v)}">${chipSvg(v, 44)}<small>${fmt(v)}</small></button>`).join('')}<button class="chipb ${u.bet === Math.floor(S.cash) && S.cash > 0 ? 'on' : ''}" ${S.cash < 1 ? 'disabled' : ''} data-a="casChip" data-v="${Math.max(1, Math.floor(S.cash))}" title="All in">${chipSvg('all', 44)}<small>ALL IN</small></button></div>
+    <div class="betbox"><div class="betlbl"><small>YOUR BET</small><b>${fmt(casBet())}</b></div>${betStack(casBet())}</div>
     ${{ rou: rouHTML, bj: bjHTML, spt: sportsHTML }[u.game]()}
     <div class="note">Play money only. The house always has an edge — roulette has a 2.7% edge, bookmakers keep ~8%.</div>`;
 }
 
 const CASINO_ACTS = {
   casGame(v) { casU().game = v; refresh(); },
-  casChip(v) { casU().bet = +v; refresh(); },
+  casChip(v) { casU().bet = +v; casClick(); refresh(); },
   rouSpin(kind) {
     const u = casU(), c = casS(), b = casBet(); if (u.busy || S.jail || b <= 0 || S.cash < b) return;
-    S.cash -= b; c.net -= b; const n = Math.floor(Math.random() * 37), i = WHEEL_ORDER.indexOf(n), mult = kind[0] === 'n' ? 35 : ROU_BETS.find(x => x[0] === kind)[2], win = rouWins(kind, n);
+    casClick(900); S.cash -= b; c.net -= b; const n = Math.floor(Math.random() * 37), i = WHEEL_ORDER.indexOf(n), mult = kind[0] === 'n' ? 35 : ROU_BETS.find(x => x[0] === kind)[2], win = rouWins(kind, n);
     u.busy = true; u.ang = Math.ceil(u.shown / 360) * 360 + 1800 - i * (360 / 37);
     save(); refresh();
     requestAnimationFrame(() => { const w = document.getElementById('rouWheel'); if (!w) return; w.getBoundingClientRect(); w.style.transition = 'transform 2.6s cubic-bezier(.12,.6,.1,1)'; w.style.transform = `rotate(${u.ang}deg)`; });
