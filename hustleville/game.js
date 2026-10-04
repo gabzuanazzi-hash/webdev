@@ -564,14 +564,10 @@ function moneyHTML() {
   const sub = UI.sub.money;
   return ribbonHTML() + tabs('money', [['jobs', '💼 Jobs'], ['biz', '🏢 Business'], ['invest', '📊 Invest']]) + ({ jobs: jobsHTML, biz: bizHTML, invest: investHTML }[sub])();
 }
-function petsHTML() {
-  const mine = stuffList(c => c === 'pet');
-  return (mine ? '<h5>🐾 Your pets</h5>' + mine : '<div class="note">No pets yet. Adopt a friend below!</div>') + '<h5>Adopt a pet</h5>' + assetsHTML('pet');
-}
 function shopHTML() {
   const sub = UI.sub.shop || 'shop';
-  if (sub !== 'pets' && (UI.cat === 'pet' || UI.cat === 'clothes')) UI.cat = 'home';
-  return ribbonHTML() + tabs('shop', [['shop', '🛍️ Shop'], ['fashion', '👗 Fashion'], ['pets', '🐾 Pets'], ['mine', `🎒 My stuff (${S.assets.filter(a => a.cat !== 'pet').length})`]]) + (sub === 'mine' ? stuffHTML() : sub === 'fashion' ? fashionHTML() : sub === 'pets' ? petsHTML() : assetsHTML());
+  if (UI.cat === 'clothes') UI.cat = 'fashion';
+  return ribbonHTML() + tabs('shop', [['shop', '🛍️ Shop'], ['mine', `🎒 My stuff (${S.assets.filter(a => a.cat !== 'pet').length})`]]) + (sub === 'mine' ? stuffHTML() : assetsHTML());
 }
 
 function jobsHTML() {
@@ -646,10 +642,12 @@ function buyBlock(it, i) {
   if (why) return `<small class="lockmsg">🔒 ${why}</small><button class="gbtn sm" disabled>${fmt(it.price)}</button>`;
   return `<button class="gbtn sm" ${S.cash >= it.price && !S.jail ? '' : 'disabled'} data-a="buy" data-v="${i}">${fmt(it.price)}</button>`;
 }
-function assetsHTML(forceCat) {
-  if (forceCat) UI.cat = forceCat;
-  const cat = ASSETS[UI.cat];
-  let h = forceCat ? '' : '<div class="chips scroll">' + Object.keys(ASSETS).filter(k => k !== 'clothes' && k !== 'pet').map(k => `<button class="${UI.cat === k ? 'on' : ''}" data-a="cat" data-v="${k}">${ASSETS[k].icon}<small>${ASSETS[k].label}</small></button>`).join('') + '</div>';
+function assetsHTML() {
+  const cat = ASSETS[UI.cat] || ASSETS.home;
+  const CHIPS = Object.keys(ASSETS).map(k => k === 'clothes' ? 'fashion' : k), chipInfo = (k) => k === 'fashion' ? { icon: '👗', label: 'Fashion' } : ASSETS[k];
+  let h = '<div class="chips scroll">' + CHIPS.map(k => `<button class="${UI.cat === k ? 'on' : ''}" data-a="cat" data-v="${k}">${chipInfo(k).icon}<small>${chipInfo(k).label}</small></button>`).join('') + '</div>';
+  if (UI.cat === 'fashion') return h + fashionHTML();
+  if (UI.cat === 'pet') { const mine = stuffList(c => c === 'pet'); if (mine) h += '<h5>🐾 Your pets</h5>' + mine + '<h5>Adopt a pet</h5>'; }
   const BRANDS = ['Scarlatti', 'Bellucci', 'Zeffiro', 'Kronvik', 'Torrente'], BRAND_BLURB = { Scarlatti: '🇮🇹 Red-blooded Italian V8 & V12 legends', Bellucci: '🇫🇷 Horseshoe-grille ultra-luxury hypercars', Zeffiro: '🇮🇹 Hand-built carbon-fibre art pieces', Kronvik: '🇸🇪 Wing-heavy Scandinavian speed machines', Torrente: '🇮🇹 Razor-edged raging-bull wedge supercars' };
   const order = UI.cat === 'car' ? cat.items.map((it, i) => ({ it, i })).sort((x, y) => (BRANDS.indexOf(x.it.brand) + 1) - (BRANDS.indexOf(y.it.brand) + 1) || x.it.tier - y.it.tier || x.i - y.i) : cat.items.map((it, i) => ({ it, i }));
   let lastBrand = null;
