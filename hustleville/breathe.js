@@ -28,6 +28,7 @@ function brClose() { cancelAnimationFrame(brRaf); brStopAudio(); if (brEl) { brE
 
 function brFinish(tech, completed) {                                  // shared by skip and completion: skipping still meditates, a full session pays a bonus
   const fx = { happy: 6, health: 2, smarts: 0 }; if (completed) { for (const k in tech.fx) fx[k] = (fx[k] || 0) + tech.fx[k]; fx.happy += 2; }
+  const lu = completed ? 6 : 3, ka = completed ? 3 : 1; S.luck = clamp((S.luck == null ? 50 : S.luck) + lu); addKarma(ka); fx.luck = lu; fx.karma = ka;
   S.done.meditate = true; S.hobbies = (S.hobbies || 0) + 1;
   S.happy = clamp(S.happy + fx.happy); S.health = clamp(S.health + fx.health); S.smarts = clamp(S.smarts + (fx.smarts || 0));
   say('🧘', completed ? `You finished a full ${tech.n.toLowerCase()} session and feel completely at peace.` : 'You took a quiet moment to meditate.', 'good');
@@ -51,7 +52,7 @@ function openBreathe() {
   const outro = (tech, fx, done) => {
     cancelAnimationFrame(brRaf); brTone(false, 160);
     el.innerHTML = `<div class="brstars">${stars}</div><div class="brin"><div class="brbubble done"></div><div class="brtitle">${done ? 'Session complete' : 'Meditation done'}</div>
-      <p>${done ? 'Your mind is clear and your body is calm.' : 'A quiet moment, taken.'}</p><div class="brfx">${fx.happy ? `😊 +${fx.happy} Happy ` : ''}${fx.health ? `❤️ +${fx.health} Health ` : ''}${fx.smarts ? `🧠 +${fx.smarts} Smarts` : ''}</div>
+      <p>${done ? 'Your mind is clear and your body is calm.' : 'A quiet moment, taken.'}</p><div class="brfx">${fx.happy ? `😊 +${fx.happy} Happy ` : ''}${fx.health ? `❤️ +${fx.health} Health ` : ''}${fx.smarts ? `🧠 +${fx.smarts} Smarts ` : ''}<br>🍀 +${fx.luck} Luck · ☯️ +${fx.karma} Karma</div>
       <button class="gbtn" data-close>DONE</button></div>`;
     el.querySelector('[data-close]').onclick = brClose;
   };

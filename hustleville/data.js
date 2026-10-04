@@ -248,15 +248,15 @@ const CRIMES = [
 /* ---------------- Activities (grouped) ---------------- */
 const ACT_GROUPS = [['body', '💪 Body & health'], ['mind', '🧠 Mind & learning'], ['adv', '🌍 Travel & adventure']];
 const ACTIVITIES = [
-  { id: 'gym', grp: 'body', fx: 'Health +6 · Looks +3', icon: '🏋️', n: 'Hit the gym', cost: 600, minAge: 14, run: s => ({ health: 6, looks: 3, happy: 2, msg: 'You got a solid workout routine going.' }) },
+  { id: 'gym', grp: 'body', fx: 'Workout game · Health +6 · Looks +3', icon: '🏋️', n: 'Hit the gym', cost: 600, minAge: 14, run: s => ({ health: 6, looks: 3, happy: 2, msg: 'You got a solid workout routine going.' }) },
   { id: 'study', grp: 'mind', fx: 'Smarts +6', icon: '📖', n: 'Study hard', cost: 0, minAge: 6, run: s => ({ smarts: 6, happy: -1, msg: 'You hit the books.' }) },
   { id: 'therapy', grp: 'body', fx: 'Happiness +10', icon: '🛋️', n: 'See a therapist', cost: 3000, minAge: 14, run: s => ({ happy: 10, msg: 'Therapy helped you clear your head.' }) },
   { id: 'travel', grp: 'adv', fx: 'Happiness +12 · Smarts +3', icon: '🧳', n: 'Backpack across the world', cost: 4000, minAge: 18, run: s => ({ happy: 12, smarts: 3, msg: 'You came back with stories and a tan.' }) },
-  { id: 'skydive', grp: 'adv', fx: 'Happiness +10 · Fame +1 · 3% fatal', icon: '🪂', n: 'Skydive', cost: 400, minAge: 18, run: s => Math.random() < 0.03 ? { health: -50, msg: 'The chute failed. Ouch.' } : { happy: 10, fame: 1, msg: 'Best rush of your life.' } },
-  { id: 'meditate', grp: 'body', fx: 'Guided breathing · Happy +6 (more if you finish)', icon: '🧘', n: 'Meditate', cost: 0, minAge: 8, run: s => ({ happy: 6, health: 2, msg: 'You meditated.' }) },
-  { id: 'surgery', grp: 'body', fx: 'Looks +15 · small risk', icon: '💉', n: 'Plastic surgery', cost: 15000, minAge: 18, run: s => Math.random() < 0.12 ? { looks: -12, happy: -8, msg: 'The surgery went badly.' } : { looks: 15, happy: 4, msg: 'You look fresh.' } },
+  { id: 'skydive', grp: 'adv', fx: 'Happiness +10 · Fame +1 · 3% fatal', icon: '🪂', n: 'Skydive', cost: 400, minAge: 18, run: s => Math.random() < 0.03 - luckAdj() * 0.02 ? { health: -50, msg: 'The chute failed. Ouch.' } : { happy: 10, fame: 1, msg: 'Best rush of your life.' } },
+  { id: 'meditate', grp: 'body', fx: 'Breathing game · Happy +6 · 🍀 Luck · ☯️ Karma', icon: '🧘', n: 'Meditate', cost: 0, minAge: 8, run: s => ({ happy: 6, health: 2, msg: 'You meditated.' }) },
+  { id: 'surgery', grp: 'body', fx: 'Looks +15 · small risk', icon: '💉', n: 'Plastic surgery', cost: 15000, minAge: 18, run: s => Math.random() < 0.12 - luckAdj() * 0.06 ? { looks: -12, happy: -8, msg: 'The surgery went badly.' } : { looks: 15, happy: 4, msg: 'You look fresh.' } },
   { id: 'podcast', grp: 'fame', fx: 'Fame +3 · Smarts +1', icon: '🎙️', n: 'Start a podcast', cost: 1500, minAge: 16, run: s => ({ fame: 3, smarts: 1, happy: 3, msg: 'Your podcast found a small audience.' }) },
-  { id: 'viral', grp: 'fame', fx: '30% viral · else cringe', icon: '🔥', n: 'Post something outrageous', cost: 0, minAge: 13, run: s => Math.random() < 0.3 ? { fame: 8, happy: 5, msg: 'It went VIRAL.' } : { fame: -1, happy: -4, msg: 'Nobody cared. Cringe.' } },
+  { id: 'viral', grp: 'fame', fx: '30% viral · else cringe', icon: '🔥', n: 'Post something outrageous', cost: 0, minAge: 13, run: s => Math.random() < lk(0.3, 0.15) ? { fame: 8, happy: 5, msg: 'It went VIRAL.' } : { fame: -1, happy: -4, msg: 'Nobody cared. Cringe.' } },
   { id: 'pr', grp: 'fame', fx: 'Fame +10', icon: '📰', n: 'Hire a PR agency', cost: 50000, minAge: 18, run: s => ({ fame: 10, msg: 'Your name is in all the right magazines.' }) },
   { id: 'charity', grp: 'fame', fx: 'Fame +8 · Happiness +8', icon: '🎗️', n: 'Host a charity gala', cost: 100000, minAge: 21, run: s => ({ fame: 8, happy: 8, msg: 'You raised millions and looked great doing it.' }) }
 ];

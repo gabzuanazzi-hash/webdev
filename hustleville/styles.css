@@ -406,3 +406,20 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 .brdots{display:flex;gap:8px}.brdots i{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.2)}.brdots i.cur{background:#fff;box-shadow:0 0 8px #fff}.brdots i.on{background:#8cf5c8}
 .brbar{display:flex;gap:12px;align-items:center;margin-top:8px}.brmini{width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;font-size:18px;cursor:pointer}
 .brfx{font-size:18px;margin:8px 0 14px;line-height:1.8}
+
+/* gym rhythm game */
+.gyx{background:radial-gradient(ellipse at 50% 30%,#3a1d52 0%,#150b2e 60%,#080414 100%)}
+.gyhud{display:flex;gap:22px;font-size:15px;opacity:.95}.gyhud b{color:#ffd45e;font-size:20px}
+.gyfig{position:relative;width:min(88vw,340px);aspect-ratio:200/150;margin:6px 0;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)}
+.gyfig svg{width:100%;height:100%;overflow:visible}
+.gycue{position:absolute;right:12px;top:12px;width:56px;height:56px;display:grid;place-items:center}
+.gycue::before{content:"";position:absolute;inset:0;border:3px solid #ffd45e;border-radius:50%;opacity:.9}
+#gyRing{position:absolute;inset:0;border:3px solid #fff;border-radius:50%;transform:scale(0)}
+#gyMsg{position:absolute;left:50%;bottom:-34px;transform:translateX(-50%);white-space:nowrap;font-size:20px;animation:gypop .5s both}
+@keyframes gypop{from{transform:translateX(-50%) scale(1.5);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
+#gyMsg.perfect{color:#ffd45e}#gyMsg.good{color:#8cf5c8}#gyMsg.miss{color:#ff7b7b}#gyMsg.count{color:#fff;font-size:34px;bottom:-40px}
+.gytap{margin-top:34px;width:min(70vw,230px);height:84px;border-radius:42px;border:3px solid #fff;background:linear-gradient(#ff8a3d,#e0442a);color:#fff;font-size:32px;font-weight:700;letter-spacing:2px;box-shadow:0 6px 0 #8f2a14,0 10px 24px rgba(0,0,0,.45);cursor:pointer;touch-action:manipulation;user-select:none}
+.gytap:active{transform:translateY(4px);box-shadow:0 2px 0 #8f2a14}
+.gybeats{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;max-width:300px}.gybeats i{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.2)}
+.gybeats i.p{background:#ffd45e;box-shadow:0 0 8px #ffd45e}.gybeats i.g{background:#8cf5c8}.gybeats i.m{background:#ff7b7b}
+.gyemoji{font-size:64px}

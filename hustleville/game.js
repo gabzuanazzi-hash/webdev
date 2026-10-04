@@ -8,6 +8,10 @@ const ri = (a, b) => Math.floor(rnd(a, b + 1));
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const clamp = (v, a = 0, b = 100) => Math.max(a, Math.min(b, v));
 const chance = (p) => Math.random() < p;
+const luckV = () => clamp((S.luck == null ? 50 : S.luck) + (S.karma || 0) * 0.3);          // 0-100; karma nudges it
+const luckAdj = () => (luckV() - 50) / 50;                                                // -1 (cursed) .. +1 (blessed)
+const lk = (p, w = 0.08) => Math.min(0.99, Math.max(0.005, p + luckAdj() * w));            // a good-outcome chance, shifted by luck
+const addKarma = (n) => { S.karma = Math.max(-100, Math.min(100, (S.karma || 0) + n)); };
 const gauss = () => Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
 const fmt = (n) => {
   const s = n < 0 ? '-' : ''; n = Math.abs(n);
@@ -104,7 +108,7 @@ function newLife() {
   S = {
     name: pick(FIRST) + ' ' + last, age: 0, alive: true, cause: '',
     country: country.n, flag: country.f, w: country.w, tier,
-    cash: 0, happy: ri(65, 95), health: ri(70, 100), smarts: ri(20, 80), looks: ri(20, 90), fame: 0,
+    cash: 0, luck: ri(40, 60), karma: 0, happy: ri(65, 95), health: ri(70, 100), smarts: ri(20, 80), looks: ri(20, 90), fame: 0,
     job: null, jobYears: 0, deg: false, college: null,
     biz: [], assets: [], invest: { savings: 0, index: 0, crypto: 0 },
     avatar: pick(AVATARS.slice(1)).k, carSpend: 0, candidate: null, partner: null, kids: [], mom, dad,
@@ -343,12 +347,12 @@ const EVENTS = [
     const c = Math.round(netWorth() * 0.01) + 2000;
     showModal({ icon: '⚖️', title: 'Lawsuit!', text: `A disgruntled ex-contractor is suing your company. Settle for ${fmt(c)} or fight it in court?`, buttons: [
       { t: 'Settle', fn: () => { S.cash -= c; say('⚖️', `You settled the lawsuit for ${fmt(c)}.`, 'bad'); } },
-      { t: 'Fight', cls: 'gold', fn: () => { if (chance(0.5)) { say('⚖️', 'You crushed them in court.', 'good'); S.fame += 2; } else { S.cash -= c * 2.5; say('⚖️', `You lost in court. Damages: ${fmt(c * 2.5)}.`, 'bad'); } } }] });
+      { t: 'Fight', cls: 'gold', fn: () => { if (chance(lk(0.5, 0.15))) { say('⚖️', 'You crushed them in court.', 'good'); S.fame += 2; } else { S.cash -= c * 2.5; say('⚖️', `You lost in court. Damages: ${fmt(c * 2.5)}.`, 'bad'); } } }] });
   } },
   { ok: s => s.age >= 13, run() { S.fame += 5; S.happy = clamp(S.happy + 5); say('🔥', 'Something you posted went viral overnight!', 'good'); } },
   { ok: s => s.age >= 18 && s.cash > 100, run() {
     showModal({ icon: '🎟️', title: 'Lottery ticket', text: 'A scratch ticket for $20. Feeling lucky?', buttons: [
-      { t: 'Buy it', fn: () => { S.cash -= 20; if (chance(0.01)) { S.cash += 250000; say('🎟️', 'YOU WON $250,000 ON A SCRATCH TICKET!', 'gold'); } else say('🎟️', 'Not a winner.', ''); } },
+      { t: 'Buy it', fn: () => { S.cash -= 20; if (chance(lk(0.01, 0.01))) { S.cash += 250000; say('🎟️', 'YOU WON $250,000 ON A SCRATCH TICKET!', 'gold'); } else say('🎟️', 'Not a winner.', ''); } },
       { t: 'Pass' }] });
   } },
   { ok: s => s.job && s.age >= 18, run() { if (chance(0.5)) { say('📉', `Layoffs hit your company. You lost your job as ${occupation()}.`, 'bad'); S.job = null; S.jobYears = 0; S.happy = clamp(S.happy - 8); } else { S.jobYears++; say('🌟', 'Your boss noticed your work. Fast-tracked toward a promotion.', 'good'); } } },
@@ -367,7 +371,7 @@ const EVENTS = [
 /* ---------- the year ---------- */
 function ageUp() {
   if (!S.alive || modalOpen()) return;
-  S.age++; S.done = {};
+  S.age++; S.done = {}; S.luck = Math.round(((S.luck == null ? 50 : S.luck) * 0.75 + 50 * 0.25) * 10) / 10;
   S.log.push({ age: S.age, items: [] });
   let income = 0, expense = 0, bizProfit = 0;
 
@@ -719,9 +723,9 @@ function crazyHTML() {
   const head = tabs('crazy', [['fun', '🎯 Activities'], ['casino', '🎰 Casino'], ['crime', '😈 Crime']]);
   if (UI.sub.crazy === 'casino') return head + casinoHTML();
   if (UI.sub.crazy === 'fun') return head + ACT_GROUPS.map(([gk, gl]) => `<h5>${gl}</h5>` + ACTIVITIES.filter(a => a.grp === gk).map(actRow).join('')).join('');
-  return head + `<div class="note">Heat: ${S.heat} · Record: ${S.record} arrest(s). Higher heat means more risk. Heat halves each year.</div>` + CRIMES.map(c => {
+  return head + `<div class="note">Heat: ${S.heat} · Record: ${S.record} arrest(s). Higher heat means more risk. Heat halves each year. Bad karma is building: ${Math.round(S.karma || 0)}. Good luck lowers your risk.</div>` + CRIMES.map(c => {
     const why = S.age < c.minAge ? c.minAge + '+' : c.smarts && S.smarts < c.smarts ? 'Smarts ' + c.smarts : c.biz && !S.biz.length ? 'Needs business' : c.cash && S.cash < c.cash ? 'Needs cash' : '';
-    return `<div class="row"><span class="ic">${c.icon}</span><div class="grow"><b>${c.n}</b><small>${fmt(c.reward[0])}–${fmt(c.reward[1])} · risk ~${Math.round((c.risk + S.heat * 0.03) * 100)}%</small></div><button class="btn sm bad" ${why || S.jail ? 'disabled' : ''} data-a="crime" data-v="${c.id}">${why || 'Try'}</button></div>`;
+    return `<div class="row"><span class="ic">${c.icon}</span><div class="grow"><b>${c.n}</b><small>${fmt(c.reward[0])}–${fmt(c.reward[1])} · risk ~${Math.round(Math.max(0, c.risk + S.heat * 0.03 - luckAdj() * 0.08) * 100)}%</small></div><button class="btn sm bad" ${why || S.jail ? 'disabled' : ''} data-a="crime" data-v="${c.id}">${why || 'Try'}</button></div>`;
   }).join('');
 }
 
@@ -742,7 +746,7 @@ function statusHTML() {
   const power = Math.round(clamp(Math.log10(Math.max(10, nw)) * 10 + S.biz.length * 3 + S.fame * 0.3 - 20));
   const claimable = S.goals.some(g => g.done && !g.claimed);
   return `<div class="lvlhead"><div class="lv">👑 LEVEL ${level()}</div><div class="xpbar"><i style="width:${xp / 3}%"></i><span>XP ${xp}/300</span></div></div>
-    <div class="card gold"><b>${stageIcon()} ${S.name}</b><br>${S.flag} ${S.country} · born into a ${FAMILIES[S.tier].n} family<br>Net worth <b>${fmt(nw)}</b> (${t.w}) · ${t.f}</div>
+    <div class="card gold"><b>${stageIcon()} ${S.name}</b><br>${S.flag} ${S.country} · born into a ${FAMILIES[S.tier].n} family<br>Net worth <b>${fmt(nw)}</b> (${t.w}) · ${t.f}<br>🍀 Luck <b>${Math.round(luckV())}</b> · ☯️ Karma <b>${(S.karma || 0) >= 0 ? '+' : ''}${Math.round(S.karma || 0)}</b></div>
     <div class="tiles">${lifeTiles().map(x => `<div class="tile"><b>${x.n}</b><div class="ring" style="--p:${x.p}"><span class="lic" style="background-image:url(assets/runway/ui/${x.ico}.png)">${x.e}</span></div>${x.p}%<br><span class="lvb">Lvl ${x.lv}</span></div>`).join('')}</div>
     <div class="goals"><h4>Yearly Goals</h4>${S.goals.map(g => `<div class="goal ${g.done ? 'done' : ''} ${g.claimed ? 'claimed' : ''}"><span class="cb">${g.done ? '✓' : ''}</span>${g.t}<span class="rw">${rewardText(g)}</span></div>`).join('') || '<div class="goal">No goals right now.</div>'}
       <button class="btn big gold" data-a="claim" ${claimable ? '' : 'disabled'}>Claim Reward</button></div>
@@ -849,10 +853,10 @@ const A = {
     if (p.married) { const l = Math.max(0, S.cash) / 2; S.cash -= l; say('💔', `You divorced ${p.name}. They took ${fmt(l)}.`, 'bad'); } else say('💔', `You broke up with ${p.name}.`, '');
     S.happy = clamp(S.happy - 10); S.partner = null; save(); refresh(); renderFeed();
   },
-  call(k) { S.done[k] = true; S.happy = clamp(S.happy + 3); say('📞', `You called ${k === 'mom' ? 'Mom' : 'Dad'}. It felt good.`, 'good'); save(); refresh(); renderFeed(); },
+  call(k) { S.done[k] = true; addKarma(1); S.happy = clamp(S.happy + 3); say('📞', `You called ${k === 'mom' ? 'Mom' : 'Dad'}. It felt good.`, 'good'); save(); refresh(); renderFeed(); },
   crime(id) {
-    const c = CRIMES.find(x => x.id === id); const caught = c.risk + S.heat * 0.03 - S.smarts / 500;
-    S.heat += 2;
+    const c = CRIMES.find(x => x.id === id); const caught = c.risk + S.heat * 0.03 - S.smarts / 500 - luckAdj() * 0.08;
+    S.heat += 2; addKarma(-3);
     if (chance(caught)) {
       const yrs = ri(c.jail[0], c.jail[1]);
       if (yrs === 0) { const f = Math.max(500, Math.round(Math.max(0, S.cash) * 0.05)); S.cash -= f; say('🚔', `You got caught (${c.n}) and paid a ${fmt(f)} fine.`, 'bad'); }
@@ -862,9 +866,10 @@ const A = {
   },
   fun(id) {
     if (id === 'meditate') return openBreathe();
+    if (id === 'gym') return openGym();
     const a = ACTIVITIES.find(x => x.id === id); S.done[id] = true; S.cash -= a.cost; if (id === 'travel') S.trips++; else S.hobbies++;
     const r = a.run(S);
-    S.happy = clamp(S.happy + (r.happy || 0)); S.health = clamp(S.health + (r.health || 0)); S.smarts = clamp(S.smarts + (r.smarts || 0)); S.looks = clamp(S.looks + (r.looks || 0)); S.fame = Math.max(0, S.fame + (r.fame || 0)); S.cash += r.cash || 0;
+    S.happy = clamp(S.happy + (r.happy || 0)); S.health = clamp(S.health + (r.health || 0)); S.smarts = clamp(S.smarts + (r.smarts || 0)); S.looks = clamp(S.looks + (r.looks || 0)); S.fame = Math.max(0, S.fame + (r.fame || 0)); S.cash += r.cash || 0; if (id === 'charity') addKarma(6);
     say(a.icon, r.msg, (r.health < 0 || r.looks < 0 || r.happy < 0) ? 'bad' : 'good');
     if (S.health <= 0) die();
     save(); refresh(); renderFeed();
