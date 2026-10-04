@@ -17,7 +17,7 @@ const Garage = (() => {
     { n: 'Stock' }, { n: 'Ice blue', c: [110, 208, 255] }, { n: 'Neon purple', c: [182, 108, 255] }, { n: 'Acid lime', c: [168, 255, 60] },
     { n: 'Hot red', c: [255, 62, 62] }, { n: 'Gold', c: [255, 202, 64] }, { n: 'Pink', c: [255, 92, 196] }, { n: 'Cyan', c: [70, 255, 240] }
   ];
-  const WRAPS = [{ n: 'None' }, { n: 'Sakura Idol', f: 'wrap-sakura.webp', jp: 'さくら' }, { n: 'Neon Tokyo', f: 'wrap-neon.webp', jp: '東京' }, { n: 'Drift Team', f: 'wrap-drift.webp', jp: '走り屋' }];
+  const WRAPS = [{ n: 'None' }, { n: 'Sakura Idol', f: 'wrap-sakura.webp', jp: 'さくら' }, { n: 'Neon Tokyo', f: 'wrap-neon.webp', jp: '東京' }, { n: 'Drift Team', f: 'wrap-drift.webp', jp: '走り屋' }, { n: 'Kitsune Miko', f: 'wrap-kitsune.webp', jp: '狐' }, { n: 'Mecha Pilots', f: 'wrap-mecha.webp', jp: '出撃' }, { n: 'Magic Stars', f: 'wrap-magic.webp', jp: '魔法' }];
   const NEONS = [{ n: 'Off' }, { n: 'Cyan', c: [40, 240, 255] }, { n: 'Magenta', c: [255, 50, 210] }, { n: 'Violet', c: [150, 80, 255] }, { n: 'Lime', c: [140, 255, 60] }, { n: 'Red', c: [255, 50, 60] }, { n: 'Blue', c: [50, 110, 255] }, { n: 'Ice white', c: [235, 245, 255] }, { n: 'Rainbow', rainbow: true }];
   const hex = (c) => c ? `rgb(${c[0]},${c[1]},${c[2]})` : '#fff';
   const PRICE = {
