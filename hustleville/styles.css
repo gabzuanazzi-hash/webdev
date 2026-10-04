@@ -423,3 +423,7 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 .gybeats{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;max-width:300px}.gybeats i{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.2)}
 .gybeats i.p{background:#ffd45e;box-shadow:0 0 8px #ffd45e}.gybeats i.g{background:#8cf5c8}.gybeats i.m{background:#ff7b7b}
 .gyemoji{font-size:64px}
+
+.gylv{display:flex;gap:6px;margin-bottom:4px}.gylv button{padding:7px 16px;border-radius:99px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.06);color:#fff;cursor:pointer}.gylv button.on{background:#ff8a3d;border-color:#fff;font-weight:700}
+.gycoach{font-size:38px;font-weight:700;min-height:48px;color:#ffd45e;text-align:center}.gysub{opacity:.8;min-height:22px;text-align:center;max-width:300px}
+.gybar{width:min(80vw,300px);height:6px;border-radius:3px;background:rgba(255,255,255,.15);overflow:hidden}.gybar i{display:block;height:100%;background:linear-gradient(90deg,#ff8a3d,#ffd45e);width:0}
