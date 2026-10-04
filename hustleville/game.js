@@ -30,7 +30,8 @@ const ART = {
   watch: { src: 'assets/runway/watches.png', cols: 3, rows: 2 },
   plane: { src: 'assets/runway/planes.png', cols: 3, rows: 2 },
   stages: { src: 'assets/runway/stages.png', cols: 4, rows: 2 },
-  hubs: { src: 'assets/runway/ui/hub-icons.png', cols: 3, rows: 2 }
+  hubs: { src: 'assets/runway/ui/hub-icons.png', cols: 3, rows: 2 },
+  products: { src: 'assets/runway/ui/products.png', cols: 5, rows: 3 }
 };
 const BANNERS = { hubs: { src: 'assets/runway/ui/hub-banners.png', pos: [10, 50, 90] }, social: { src: 'assets/runway/ui/social-banners.png', pos: [20, 80] } };
 function bannerHTML(key, idx) { const a = BANNERS[key]; return a && a.ok ? `<div class="banner" style="background-image:url(${a.src});background-position:center ${a.pos[idx]}%"></div>` : ''; }
@@ -69,7 +70,7 @@ function stageIdx() {
 
 /* ---------- state ---------- */
 let S = null;
-const UI = { panel: null, sub: { money: 'jobs', crazy: 'crime', social: 'post' }, hub: null, startOpen: false, cat: 'home' };
+const UI = { panel: null, sub: { money: 'jobs', crazy: 'crime', social: 'post' }, hub: null, startOpen: false, src: null, cat: 'home' };
 let modalQueue = [];
 let C = null; // active contract
 
@@ -303,7 +304,7 @@ function ageUp() {
     if (p > 0) p = p * contractMult(c) * (1 - (b.dilution || 0)) * (b.termLeft <= 0 ? 0.7 : 1);
     if (S.jail > 0) p *= 0.5;
     if (c.trapId && !c.trapStruck && !c.revealed) { c.revealed = true; say('😬', `The fine print bit you: ${TRAPS.find(t => t.id === c.trapId).text.split(':')[0]} is cutting into ${H.name}.`, 'bad'); }
-    const net = p > 0 ? p * 0.8 : p; S.cash += net; income += Math.max(0, net); bizProfit += p;
+    const net = p > 0 ? p * 0.8 : p; S.cash += net + (r.cashAdj || 0); income += Math.max(0, net); bizProfit += p;
     b.last = { rev: r.rev, exp: r.exp, profit: p, notes: r.notes };
     say(H.icon, `${H.name}: ${p >= 0 ? 'profit' : 'loss'} ${fmt(Math.abs(net))}${p > 0 ? ' after tax' : ''}.`, p >= 0 ? 'good' : 'bad');
     r.notes.slice(0, 3).forEach(n => say('📋', n, ''));
@@ -435,10 +436,12 @@ const locked = () => S.jail > 0 ? `<div class="note bad">⛓️ You are in priso
 
 function renderPanel() {
   const hubOpen = UI.panel === 'money' && UI.sub.money === 'biz' && UI.hub != null && S.biz[UI.hub];
-  const money = hubOpen ? HUBS[S.biz[UI.hub].id].name : { jobs: 'Careers', biz: 'Business Empire', invest: 'Invest' }[UI.sub.money];
+  const money = hubOpen ? (UI.src ? 'Sourcing' : HUBS[S.biz[UI.hub].id].name) : { jobs: 'Careers', biz: 'Business Empire', invest: 'Invest' }[UI.sub.money];
   const T = { money: [money, moneyHTML], social: ['Social Media', socialHTML], love: ['Love & Family', loveHTML], shop: ['Asset Shop', shopHTML], crazy: ['Crazy', crazyHTML], status: ['Life & Goals', statusHTML] }[UI.panel];
   $('sheetTitle').textContent = T[0];
-  const y = $('sheetBody').scrollTop;
+  const view = [UI.panel, UI.sub.money, UI.sub.social, UI.sub.crazy, UI.hub, UI.src ? (UI.src.sel ? 's2' : 's1') : 0, UI.startOpen].join('|');
+  const y = view === renderPanel.last ? $('sheetBody').scrollTop : 0;
+  renderPanel.last = view;
   $('sheetBody').innerHTML = locked() + T[1]();
   $('sheetBody').scrollTop = y;
 }
@@ -495,6 +498,7 @@ function bizHTML() {
   return h;
 }
 function hubHTML(i) {
+  if (UI.src && S.biz[i].id === 'ecom') return sourcingHTML(i);
   const b = S.biz[i], H = HUBS[b.id], defs = H.defs(b), mx = apMax(b);
   const mets = H.metrics(b).map(m => `<div class="mt"><label>${m.l}</label><div class="bar"><i style="width:${clamp(m.p)}%;background:${hcol(m.p)}"></i></div><b>${m.v}</b></div>`).join('');
   const tasks = H.list.map(id => {
@@ -603,8 +607,8 @@ const A = {
     H.init(nb); nb.ap = apMax(nb); S.biz.push(nb); UI.hub = S.biz.length - 1; UI.startOpen = false;
     say(H.icon, `You started ${H.name}${H.cost ? ' for ' + fmt(H.cost) : ''}.`, 'gold'); checkAch(); save(); refresh(); renderFeed();
   },
-  openHub(i) { UI.hub = +i; refresh(); },
-  closeHub() { UI.hub = null; refresh(); },
+  openHub(i) { UI.hub = +i; UI.src = null; refresh(); },
+  closeHub() { UI.hub = null; UI.src = null; refresh(); },
   hubTask(v) {
     const [i, id, arg] = v.split(':'), b = S.biz[+i]; if (!b) return;
     const mk = HUBS[b.id].defs(b)[id]; if (!mk) return;
@@ -685,7 +689,7 @@ const A = {
   restart() { showModal({ icon: '⚠️', title: 'Start over?', text: 'This ends your current life and starts a new one.', buttons: [{ t: 'New life', cls: 'bad', fn: () => { newLife(); closePanel(); renderFeed(); refresh(); } }, { t: 'Cancel' }] }); }
 };
 
-Object.assign(A, SA);
+Object.assign(A, SA, HA);
 
 /* ---------- immersive contract signing ---------- */
 const REP_LINES = {

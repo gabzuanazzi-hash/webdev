@@ -21,14 +21,22 @@ const fnum = (n) => n >= 1e9 ? (n / 1e9).toFixed(2) + 'B' : n >= 1e6 ? (n / 1e6)
 const PRODUCT_IDEAS = [
   ['Posture Corrector', '🧍', 29], ['LED Strip Lights', '💡', 24], ['Pet Hair Remover', '🐕', 19], ['Mini Projector', '📽️', 89],
   ['Yoga Mat Pro', '🧘', 39], ['Phone Gimbal', '📱', 69], ['Cat Water Fountain', '🐈', 34], ['Smart Water Bottle', '🥤', 32],
-  ['Beard Grooming Kit', '🧔', 45], ['Car Vacuum', '🚗', 49], ['Sunset Lamp', '🌅', 22], ['Massage Gun', '💆', 79], ['Desk Organizer', '🗂️', 28]
+  ['Beard Grooming Kit', '🧔', 45], ['Car Vacuum', '🚗', 49], ['Sunset Lamp', '🌅', 22], ['Massage Gun', '💆', 79], ['Desk Organizer', '🗂️', 28],
+  ['Portable Blender', '🥤', 35], ['Neck Fan', '🌬️', 26]
 ];
+const WH = [
+  { n: 'No warehouse', cap: 0, setup: 0, rent: 0 }, { n: 'Garage storage', cap: 500, setup: 4000, rent: 3000 },
+  { n: 'Small warehouse', cap: 2500, setup: 15000, rent: 12000 }, { n: 'Fulfilment center', cap: 10000, setup: 50000, rent: 40000 }
+];
+const QTY_TIERS = [{ q: 100, d: 0 }, { q: 250, d: 0.05 }, { q: 500, d: 0.10 }, { q: 1000, d: 0.15 }, { q: 2500, d: 0.22 }];
+const whUsed = (h) => h.products.reduce((a, p) => a + (p.stock || 0), 0);
+const DROP_SHIP = 4.5, STOCK_HANDLING = 2;
 
 HUBS.ecom = {
   id: 'ecom', icon: '🛒', sprite: 0, banner: 0, name: 'Dropshipping Store', tag: 'online', cost: 0, lvlBase: 3000,
   kind: 'Supplier Agreement', partner: 'Supplier',
   blurb: 'Find winning products, run ads, keep customers happy. What you do during the year decides the profit.',
-  init(b) { b.hub = { products: [], adVisitors: 0, adSpend: 0, conv: 2.2, rating: 4.0, costMult: 1, rel: 60, backlog: 0, brand: 10, email: 0, orders: 0 }; },
+  init(b) { b.hub = { products: [], adVisitors: 0, adSpend: 0, conv: 2.2, rating: 4.0, costMult: 1, rel: 60, backlog: 0, brand: 10, email: 0, orders: 0, wh: 0 }; },
   metrics(b) {
     const h = b.hub;
     return [
@@ -37,10 +45,10 @@ HUBS.ecom = {
       { l: 'Brand', v: Math.round(h.brand) + '', p: h.brand },
       { l: 'Supplier trust', v: Math.round(h.rel) + '', p: h.rel },
       { l: 'Support backlog', v: Math.round(h.backlog) + ' tickets', p: 100 - Math.min(100, h.backlog * 2) },
-      { l: 'Email list', v: num(h.email), p: Math.min(100, h.email / 50) }
+      { l: 'Warehouse', v: WH[h.wh || 0].cap ? `${num(whUsed(h))} / ${num(WH[h.wh].cap)} units` : 'none', p: WH[h.wh || 0].cap ? whUsed(h) / WH[h.wh].cap * 100 : 0 }
     ];
   },
-  list: ['research', 'ad_s', 'ad_m', 'ad_l', 'optimize', 'supplier', 'support', 'qc', 'email', 'influencer'],
+  list: ['research', 'warehouse', 'ad_s', 'ad_m', 'ad_l', 'optimize', 'supplier', 'support', 'qc', 'email', 'influencer'],
   defs(b) {
     const h = b.hub, s = hsc(b), haveP = h.products.length > 0;
     const ad = (name, base) => () => ({
@@ -54,15 +62,17 @@ HUBS.ecom = {
     });
     return {
       research: () => ({
-        icon: '🔍', t: 'Product research', d: 'Hunt for a product people want. Some are duds, some are winners.', ap: 1, cost: Math.round(300 * s),
+        icon: '🔍', t: 'Source a product', d: 'Browse products, pick one and order from your dealer in China.', ap: 1, cost: Math.round(300 * s),
         why: h.products.length >= 3 + b.level ? 'Store is full' : '',
-        run() {
-          const idea = pick(PRODUCT_IDEAS), price = Math.round(idea[2] * rnd(0.8, 1.4));
-          const winner = chance(0.14), trend = winner ? ri(80, 98) : ri(12, 80);
-          h.products.push({ n: idea[0], e: idea[1], price, cost: +(price * rnd(0.25, 0.5)).toFixed(2), trend, quality: ri(45, 90) });
-          return winner ? `🔥 Winner! ${idea[0]} is blowing up on social media (trend ${trend}).` : `Added ${idea[0]} at $${price}. Trend score ${trend}.`;
-        }
+        run() { openSourcing(b); return null; }
       }),
+      warehouse: () => {
+        const nx = WH[(h.wh || 0) + 1];
+        return {
+          icon: '🏭', t: nx ? 'Rent: ' + nx.n : 'Warehouse maxed', d: nx ? `Holds ${num(nx.cap)} units. Own stock earns bigger margins. Rent ${fmt(nx.rent)}/yr.` : 'You have the biggest facility.', ap: 1, cost: nx ? nx.setup : 0, why: nx ? '' : 'Maxed out',
+          run() { h.wh = (h.wh || 0) + 1; return `You rented a ${WH[h.wh].n.toLowerCase()} (${num(WH[h.wh].cap)} units).`; }
+        };
+      },
       ad_s: ad('Small ad test', 300), ad_m: ad('Ad campaign', 1500), ad_l: ad('Scale-up campaign', 6000),
       optimize: () => ({
         icon: '🛠️', t: 'Optimize store', d: 'A/B test the page, fix checkout. Raises conversion.', ap: 1, cost: Math.round(200 * s), why: h.conv >= 7 ? 'Maxed out' : '',
@@ -99,45 +109,61 @@ HUBS.ecom = {
           }
         };
       },
-      drop: (i) => ({ icon: '🗑️', t: 'Drop product', d: '', ap: 0, cost: 0, why: '', run() { const p = h.products.splice(+i, 1)[0]; return `Dropped ${p.n}.`; } })
+      drop: (i) => ({ icon: '🗑️', t: 'Drop product', d: '', ap: 0, cost: 0, why: '', run() { const p = h.products.splice(+i, 1)[0]; return `Dropped ${p.n}${p.stock ? ' and wrote off ' + num(p.stock) + ' units' : ''}.`; } }),
+      mode: (v) => { const [k, m] = v.split('/'); const p = h.products[+k]; return { icon: '🔁', t: 'Fulfilment', d: '', ap: 0, cost: 0, why: p ? '' : 'Gone', run() { p.mode = m; return `${p.n} now ships by ${m === 'stock' ? 'your own stock' : 'dropshipping'}.`; } }; }
     };
   },
   extra(b, i) {
-    const h = b.hub;
-    if (!h.products.length) return '<div class="note">No products yet. Start with Product research.</div>';
-    return '<h5>Your catalog</h5>' + h.products.map((p, k) => {
-      const margin = Math.round((1 - p.cost * h.costMult / p.price) * 100);
-      return `<div class="row"><span class="ic">${p.e}</span><div class="grow"><b>${p.n}</b> · $${p.price}<small>${margin}% margin · quality ${p.quality}</small><div class="bar"><i style="width:${p.trend}%;background:${hcol(p.trend)}"></i></div><small>🔥 trend ${p.trend}</small></div><button class="btn sm" data-a="hubTask" data-v="${i}:drop:${k}">Drop</button></div>`;
+    const h = b.hub, w = WH[h.wh || 0];
+    let out = `<h5>Warehouse</h5><div class="card"><b>🏭 ${w.n}</b><small>${w.cap ? `${num(whUsed(h))} / ${num(w.cap)} units stored · rent ${fmt(w.rent)}/yr` : 'No storage yet. You can only dropship until you rent a warehouse (Tasks → Rent).'}</small></div>`;
+    if (!h.products.length) return out + '<div class="note">No products yet. Start with Source a product.</div>';
+    return out + '<h5>Your catalog</h5>' + h.products.map((p, k) => {
+      const mode = p.mode || 'drop', unit = mode === 'stock' ? p.cost : (p.dcost || p.cost) * h.costMult, per = mode === 'stock' ? STOCK_HANDLING : DROP_SHIP;
+      const margin = Math.round((1 - (unit + per) / p.price) * 100);
+      return `<div class="row"><span class="ic">${prodArt(p, 44)}</span><div class="grow"><b>${p.n}</b> · $${p.price}<small>${mode === 'stock' ? `🏭 Own stock: ${num(p.stock || 0)} units` : '📦 Dropship (no stock)'} · ${margin}% margin</small><div class="bar"><i style="width:${p.trend}%;background:${hcol(p.trend)}"></i></div><small>🔥 trend ${p.trend} · quality ${p.quality}</small>
+        <div class="btns"><button class="mini ${mode === 'drop' ? 'on' : ''}" data-a="hubTask" data-v="${i}:mode:${k}/drop">Dropship</button><button class="mini ${mode === 'stock' ? 'on' : ''}" ${w.cap ? '' : 'disabled'} data-a="hubTask" data-v="${i}:mode:${k}/stock">Own stock</button><button class="mini" ${w.cap ? '' : 'disabled'} data-a="srcRestock" data-v="${k}">➕ Restock</button><button class="mini" data-a="hubTask" data-v="${i}:drop:${k}">Drop</button></div></div></div>`;
     }).join('');
   },
   yearEnd(b) {
     const h = b.hub, s = hsc(b), notes = [];
     const organic = 1300 * s * (0.6 + h.brand / 100) * (1 + h.email / 4000);
     const visitors = organic + h.adVisitors;
-    let rev = 0, cogs = 0, orders = 0, refunds = 0;
+    let rev = 0, cogs = 0, orders = 0, refunds = 0, ship = 0, prepaid = 0, hold = 0, lost = 0;
     const ws = h.products.map(p => (p.trend / 100) * (0.5 + p.quality / 200) + 0.1), wt = ws.reduce((a, c) => a + c, 0) || 1;
     let best = null;
     h.products.forEach((p, k) => {
       const vis = visitors * ws[k] / wt * rnd(0.85, 1.15);
-      const o = vis * (h.conv / 100) * (0.7 + p.trend / 150) * (h.rating / 4.2);
+      let o = vis * (h.conv / 100) * (0.7 + p.trend / 150) * (h.rating / 4.2);
+      if ((p.mode || 'drop') === 'stock') {
+        o *= 1.06;                                   // faster shipping converts a little better
+        const sold = Math.min(o, p.stock || 0);
+        if (o - sold > 1) { lost += o - sold; notes.push(`Ran out of ${p.n}: about ${num(o - sold)} sales lost. Restock sooner.`); }
+        o = sold; p.stock = (p.stock || 0) - sold; cogs += sold * p.cost; prepaid += sold * p.cost; ship += sold * STOCK_HANDLING; hold += p.stock * p.cost * 0.06;
+      } else { cogs += o * (p.dcost || p.cost) * h.costMult; ship += o * DROP_SHIP; }
       const r = o * p.price, rr = clamp(0.03 + (100 - p.quality) / 800 + h.backlog / 400, 0.02, 0.4);
-      rev += r; cogs += o * p.cost * h.costMult; orders += o; refunds += r * rr;
+      rev += r; orders += o; refunds += r * rr;
       if (!best || r > best.r) best = { n: p.n, r };
     });
-    const ship = orders * 3.5, fees = rev * 0.03, tools = 150 * s, ads = h.adSpend;
-    let profit = rev - refunds - cogs - ship - fees - ads - tools;
-    const exp = refunds + cogs + ship + fees + ads + tools;
+    const rent = WH[h.wh || 0].rent, fees = rev * 0.03, tools = 150 * s, ads = h.adSpend;
+    let profit = rev - refunds - cogs - ship - fees - ads - tools - rent - hold;
+    const exp = refunds + cogs + ship + fees + ads + tools + rent + hold;
     if (best) notes.push(`${num(orders)} orders · best seller ${best.n} (${fmt(best.r)})`);
     else notes.push('You had no products to sell.');
+    if (rent) notes.push(`Warehouse rent ${fmt(rent)}${hold > 1 ? ' + stock holding ' + fmt(hold) : ''}.`);
     if (chance(0.15)) { const hit = rev * 0.05; profit -= hit; notes.push(`Chargebacks and fraud cost ${fmt(hit)}.`); }
     if (chance(0.15)) { h.rel = Math.max(0, h.rel - 8); h.backlog += 12; notes.push('Your supplier shipped late. Tickets piled up.'); }
     // new year
     h.backlog = Math.min(120, h.backlog + orders / 90);
     h.rating = clamp(h.rating + (h.products.length ? (h.products.reduce((a, p) => a + p.quality, 0) / h.products.length - 60) / 400 : 0) - h.backlog / 400, 2, 5);
     h.products.forEach(p => { p.trend = Math.round(p.trend * 0.72); });
-    h.products = h.products.filter(p => p.trend >= 6 || (notes.push(`${p.n} stopped selling and was dropped.`), false));
+    h.products = h.products.filter(p => {
+      if (p.trend >= 6) return true;
+      if (p.stock > 0) { const sale = p.stock * p.price * 0.25, loss = p.stock * p.cost; rev += sale; profit += sale - loss; prepaid += loss; notes.push(`${p.n} faded. You liquidated ${num(p.stock)} leftover units at a loss.`); }
+      else notes.push(`${p.n} stopped selling and was dropped.`);
+      return false;
+    });
     h.brand = Math.max(0, h.brand - 3); h.adVisitors = 0; h.adSpend = 0; h.orders = Math.round(orders);
-    return { rev, exp, profit, notes };
+    return { rev, exp, profit, notes, cashAdj: prepaid };
   },
   value(b) { return Math.max(1500, (b.last ? b.last.profit : 0) * 3) * (0.8 + b.level * 0.2); },
   roleplays: [
@@ -468,3 +494,92 @@ function hubCall(b) {
     buttons: r.choices.map(ch => ({ t: ch.t, fn: () => { hubResult(b, ch.fn(b, c)); save(); } }))
   });
 }
+
+
+/* =========================================================
+   Store sourcing screen: pick a product, then choose dropship or own stock
+   ========================================================= */
+const prodArt = (p, B) => art('products', p.pi, B, p.e);
+const DEALER_LINES = [
+  'Boss, I have new products from the factory. Pick one and tell me how many you want.',
+  'Big orders get big discounts. But remember, a hot product can go cold fast.',
+  'Dropship and I ship each order for you. Buy stock and you keep more of each sale.'
+];
+const srcFreight = (price) => +(1.2 + price * 0.03).toFixed(2);
+function srcCands() {
+  const used = new Set(), out = [];
+  while (out.length < 6) {
+    const k = ri(0, PRODUCT_IDEAS.length - 1); if (used.has(k)) continue; used.add(k);
+    const id = PRODUCT_IDEAS[k], price = Math.round(id[2] * rnd(0.8, 1.4)), real = chance(0.14) ? ri(80, 98) : ri(12, 80);
+    out.push({ pi: k, n: id[0], e: id[1], price, fcost: +(price * rnd(0.18, 0.3)).toFixed(2), trend: real, est: clamp(real + ri(-18, 18), 5, 99), quality: ri(45, 90) });
+  }
+  return out;
+}
+function openSourcing(b) { UI.src = { cands: srcCands(), sel: null, mode: 'drop', qty: 100, restock: null, line: pick(DEALER_LINES) }; }
+function srcNums(b) {
+  const h = b.hub, s = UI.src.sel, w = WH[h.wh || 0], free = Math.max(0, w.cap - whUsed(h));
+  const landed = (q) => { const d = (QTY_TIERS.find(t => t.q === q) || QTY_TIERS[0]).d; return s.fcost * (1 - d) * h.costMult + srcFreight(s.price); };
+  const dcost = s.fcost * 1.65 * h.costMult;
+  return { h, s, w, free, landed, dcost, mDrop: s.price - dcost - DROP_SHIP, mStock: (q) => s.price - landed(q) - STOCK_HANDLING };
+}
+function sourcingHTML(i) {
+  const b = S.biz[i], src = UI.src;
+  let out = `<button class="back" data-a="srcCancel">← Back to store</button>
+    <div class="dealer"><span class="face">🧑‍🏭</span><div class="bubble">${src.line}</div></div>`;
+  if (!src.sel) {
+    return out + `<div class="plate sm">Pick a product to bet on</div><div class="agrid">` + src.cands.map((c, k) => `<div class="acard"><span class="ai">${art('products', c.pi, 64, c.e)}</span><b>${c.n}</b>
+      <small>Sells for $${c.price} · factory $${c.fcost.toFixed(2)}</small><div class="bar"><i style="width:${c.est}%;background:${hcol(c.est)}"></i></div><small>🔥 hype ~${c.est} (estimate) · quality ${c.quality}</small>
+      <button class="gbtn sm" data-a="srcPick" data-v="${k}">PICK</button></div>`).join('') + `</div><small class="meta">Hype is only an estimate from the dealer. Trends can fade or explode, so you are betting on this product. The catalog fee is already paid.</small>`;
+  }
+  const n = srcNums(b), { h, s, w, free } = n, restock = src.restock != null, mode = restock ? 'stock' : src.mode;
+  const ok = (q) => q <= free;
+  if (mode === 'stock' && !ok(src.qty)) src.qty = (QTY_TIERS.filter(t => ok(t.q)).pop() || QTY_TIERS[0]).q;
+  const q = src.qty, total = mode === 'stock' ? q * n.landed(q) : (restock ? 0 : 100);
+  const can = mode === 'stock' ? (w.cap > 0 && ok(q) && S.cash >= total) : S.cash >= total;
+  out += `<div class="card gold"><div class="row nobg"><span class="ic">${art('products', s.pi, 56, s.e)}</span><div class="grow"><b>${s.n}</b><small>Sells for $${s.price} · factory price $${s.fcost.toFixed(2)} each</small></div></div></div>`;
+  if (!restock) {
+    out += `<div class="modes">
+      <button class="mode ${mode === 'drop' ? 'on' : ''}" data-a="srcMode" data-v="drop"><span>📦</span><b>Dropship</b><small>No stock, no warehouse. Dealer ships every order.</small><em>Margin ${fmt(n.mDrop)} (${Math.round(n.mDrop / s.price * 100)}%)</em></button>
+      <button class="mode ${mode === 'stock' ? 'on' : ''}" ${w.cap ? '' : 'disabled'} data-a="srcMode" data-v="stock"><span>🏭</span><b>Own stock</b><small>Buy in bulk, ship from your warehouse. Bigger margin, but you pay up front.</small><em>Margin ${fmt(n.mStock(q))} (${Math.round(n.mStock(q) / s.price * 100)}%)</em></button></div>`;
+  }
+  if (mode === 'stock') {
+    out += `<h5>How many units from China?</h5><div class="qty">` + QTY_TIERS.map(t => `<button class="${q === t.q ? 'on' : ''}" ${ok(t.q) ? '' : 'disabled'} data-a="srcQty" data-v="${t.q}"><b>${num(t.q)}</b><small>$${n.landed(t.q).toFixed(2)} ea${t.d ? ' · -' + Math.round(t.d * 100) + '%' : ''}</small></button>`).join('') + '</div>';
+    out += `<div class="card"><b>🏭 ${w.n}</b><small>${w.cap ? `Room for ${num(free)} more units (${num(whUsed(h))}/${num(w.cap)} used). Rent ${fmt(w.rent)}/yr.` : 'You have no warehouse. Rent one to hold stock.'}</small>${WH[(h.wh || 0) + 1] ? `<button class="btn sm teal" ${S.cash >= WH[(h.wh || 0) + 1].setup ? '' : 'disabled'} data-a="srcWh">Rent ${WH[(h.wh || 0) + 1].n} · ${fmt(WH[(h.wh || 0) + 1].setup)} (holds ${num(WH[(h.wh || 0) + 1].cap)})</button>` : ''}</div>
+      <div class="note">Shipping from China takes a few weeks. Leftover stock loses value when the trend fades, and running out loses sales.</div>`;
+  } else {
+    out += `<div class="note">Dropshipping has no stock risk. You pay the dealer per order, so each sale earns less. A $100 listing fee applies.</div>`;
+  }
+  out += `<div class="card"><b>${mode === 'stock' ? `${num(q)} units × $${n.landed(q).toFixed(2)} = ${fmt(total)}` : 'Listing fee ' + fmt(total)}</b><small>Cash: ${fmt(S.cash)}</small></div>
+    <button class="btn big gold" ${can ? '' : 'disabled'} data-a="srcConfirm">${restock ? 'Place restock order' : 'Order & list product'}</button>
+    <button class="btn" data-a="srcBack">${restock ? 'Cancel' : '← Pick a different product'}</button>`;
+  return out;
+}
+const HA = {
+  srcPick(k) { const c = UI.src.cands[+k]; UI.src.sel = c; UI.src.mode = 'drop'; refresh(); },
+  srcBack() { if (UI.src.restock != null) UI.src = null; else UI.src.sel = null; refresh(); },
+  srcCancel() { UI.src = null; refresh(); },
+  srcMode(m) { UI.src.mode = m; refresh(); },
+  srcQty(q) { UI.src.qty = +q; refresh(); },
+  srcWh() { const b = S.biz[UI.hub], h = b.hub, nx = WH[(h.wh || 0) + 1]; if (!nx || S.cash < nx.setup) return; S.cash -= nx.setup; h.wh = (h.wh || 0) + 1; toast(`Rented a ${nx.n.toLowerCase()} (${num(nx.cap)} units).`); refresh(); },
+  srcRestock(k) {
+    const b = S.biz[UI.hub], p = b.hub.products[+k]; if (!p) return;
+    UI.src = { cands: [], restock: +k, mode: 'stock', qty: 100, line: pick(DEALER_LINES), sel: { pi: p.pi, n: p.n, e: p.e, price: p.price, fcost: p.fcost || p.cost * 0.8, trend: p.trend, quality: p.quality } }; refresh();
+  },
+  srcConfirm() {
+    const b = S.biz[UI.hub], src = UI.src, h = b.hub, n = srcNums(b), s = src.sel, restock = src.restock != null, mode = restock ? 'stock' : src.mode, q = src.qty;
+    const total = mode === 'stock' ? q * n.landed(q) : (restock ? 0 : 100);
+    if (S.cash < total || (mode === 'stock' && (!n.w.cap || q > n.free))) return;
+    if (!restock && h.products.length >= 3 + b.level) return toast('Your store is full. Drop a product first.');
+    S.cash -= total; S.done.hub = true;
+    let msg;
+    if (restock) {
+      const p = h.products[src.restock]; p.cost = +((p.cost * (p.stock || 0) + n.landed(q) * q) / ((p.stock || 0) + q)).toFixed(2); p.stock = (p.stock || 0) + q; p.mode = 'stock';
+      msg = `Restocked ${num(q)} × ${p.n} for ${fmt(total)}.`;
+    } else {
+      h.products.push({ pi: s.pi, n: s.n, e: s.e, price: s.price, fcost: s.fcost, cost: +n.landed(mode === 'stock' ? q : 100).toFixed(2), dcost: +(s.fcost * 1.65).toFixed(2), trend: s.trend, quality: s.quality, mode, stock: mode === 'stock' ? q : 0 });
+      msg = mode === 'stock' ? `Ordered ${num(q)} × ${s.n} from China for ${fmt(total)}. Listed on your store.` : `Listed ${s.n} as a dropship product.`;
+      if (s.trend >= 80) msg += ' 🔥 It is taking off!';
+    }
+    hlog(b, msg); toast(msg); UI.src = null; save(); refresh();
+  }
+};

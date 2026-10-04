@@ -253,3 +253,17 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 .tabs { position: relative; z-index: 10; }
 .tabs .age { position: relative; z-index: 11; }
 .avatar .art { border-radius: 50%; }
+
+/* ---- store sourcing ---- */
+.dealer { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.dealer .face { font-size: 2rem; background: #0a1730; border: 2px solid var(--line); border-radius: 50%; width: 52px; height: 52px; display: grid; place-items: center; flex: none; }
+.dealer .bubble { background: #fff; color: #222; border-radius: 14px 14px 14px 2px; padding: 8px 12px; font-size: .82rem; }
+.row.nobg { background: none; border: 0; padding: 0; margin: 0; }
+.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+.mode { text-align: left; display: flex; flex-direction: column; gap: 3px; padding: 10px; color: var(--ink); cursor: pointer; border: 3px solid #ffffff33; border-radius: 14px; background: linear-gradient(#17607a, #123f68); font-family: Fredoka, sans-serif; }
+.mode.on { border-color: var(--gold); box-shadow: 0 0 14px #f5c54266; } .mode:disabled { opacity: .4; cursor: not-allowed; }
+.mode span { font-size: 1.6rem; } .mode b { font: .95rem var(--title); } .mode small { color: #d2f7f1; font-size: .64rem; flex: 1; } .mode em { font-style: normal; font-weight: 700; color: var(--gold); font-size: .78rem; }
+.qty { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 8px; }
+.qty button { color: var(--ink); background: #10264a; border: 2px solid #ffffff22; border-radius: 10px; padding: 6px 2px; cursor: pointer; font-family: Fredoka, sans-serif; }
+.qty button b { display: block; font-size: .8rem; } .qty button small { display: block; font-size: .52rem; color: var(--mint); }
+.qty button.on { border-color: var(--gold); background: linear-gradient(#1e8b88, #136a6c); } .qty button:disabled { opacity: .35; cursor: not-allowed; }
