@@ -36,7 +36,7 @@ const ART = {
   itA: { src: 'assets/runway/ui/items-a.jpg', cols: 5, rows: 3 },
   itB: { src: 'assets/runway/ui/items-b.jpg', cols: 5, rows: 3 },
   itC: { src: 'assets/runway/ui/items-c.jpg', cols: 5, rows: 3 },
-  lux: { src: 'assets/garage/lux-icons.webp', cols: 4, rows: 4 }
+  lux: { src: 'assets/garage/lux-icons.webp', cols: 5, rows: 4 }
 };
 const BANNERS = { hubs: { src: 'assets/runway/ui/hub-banners.png', pos: [10, 50, 90] }, social: { src: 'assets/runway/ui/social-banners.png', pos: [20, 80] } };
 function bannerHTML(key, idx) { const a = BANNERS[key]; return a && a.ok ? `<div class="banner" style="background-image:url(${a.src});background-position:center ${a.pos[idx]}%"></div>` : ''; }
@@ -639,7 +639,7 @@ function buyBlock(it, i) {
 function assetsHTML() {
   const cat = ASSETS[UI.cat];
   let h = '<div class="chips scroll">' + Object.keys(ASSETS).map(k => `<button class="${UI.cat === k ? 'on' : ''}" data-a="cat" data-v="${k}">${ASSETS[k].icon}<small>${ASSETS[k].label}</small></button>`).join('') + '</div>';
-  const BRANDS = ['Scarlatti', 'Bellucci', 'Zeffiro', 'Kronvik'], BRAND_BLURB = { Scarlatti: '🇮🇹 Red-blooded Italian V8 & V12 legends', Bellucci: '🇫🇷 Horseshoe-grille ultra-luxury hypercars', Zeffiro: '🇮🇹 Hand-built carbon-fibre art pieces', Kronvik: '🇸🇪 Wing-heavy Scandinavian speed machines' };
+  const BRANDS = ['Scarlatti', 'Bellucci', 'Zeffiro', 'Kronvik', 'Torrente'], BRAND_BLURB = { Scarlatti: '🇮🇹 Red-blooded Italian V8 & V12 legends', Bellucci: '🇫🇷 Horseshoe-grille ultra-luxury hypercars', Zeffiro: '🇮🇹 Hand-built carbon-fibre art pieces', Kronvik: '🇸🇪 Wing-heavy Scandinavian speed machines', Torrente: '🇮🇹 Razor-edged raging-bull wedge supercars' };
   const order = UI.cat === 'car' ? cat.items.map((it, i) => ({ it, i })).sort((x, y) => (BRANDS.indexOf(x.it.brand) + 1) - (BRANDS.indexOf(y.it.brand) + 1) || x.it.tier - y.it.tier || x.i - y.i) : cat.items.map((it, i) => ({ it, i }));
   let lastBrand = null;
   h += `<div class="agrid">`;
@@ -658,7 +658,7 @@ function assetsHTML() {
   });
   return h + '</div>';
 }
-const brandRank = (a) => { const it = findItem(a.cat, a.n); return it && it.brand ? ['Scarlatti', 'Bellucci', 'Zeffiro', 'Kronvik'].indexOf(it.brand) + 1 : 0; };
+const brandRank = (a) => { const it = findItem(a.cat, a.n); return it && it.brand ? ['Scarlatti', 'Bellucci', 'Zeffiro', 'Kronvik', 'Torrente'].indexOf(it.brand) + 1 : 0; };
 function stuffHTML() {
   if (!S.assets.length) return '<div class="note">You do not own anything yet. Buy something in the Shop, then come back here to use it, upgrade it, rent it out or sell it.</div>';
   let h = '', last = null;

@@ -134,7 +134,11 @@ const ASSETS = {
     I('Kronvik Aurora', '🏁', 4800000, { sh: 'lux', sp: 12, brand: 'Kronvik', tier: 0, req: 0, up: 0.03, dep: 0, happy: 10, fame: 6, acts: ['custom', 'service', 'roadtrip', 'race'] }),
     I('Kronvik Frost', '🏁', 16000000, { sh: 'lux', sp: 13, brand: 'Kronvik', tier: 1, req: 40000000, up: 0.025, dep: 0.01, happy: 12, fame: 10, acts: ['custom', 'service', 'roadtrip', 'race'] }),
     I('Kronvik Valkyr', '🏁', 62000000, { sh: 'lux', sp: 14, brand: 'Kronvik', tier: 2, req: 150000000, up: 0.02, dep: 0.025, happy: 15, fame: 16, acts: ['custom', 'service', 'roadtrip', 'race'] }),
-    I('Kronvik Ragnarok Unica', '🏁', 185000000, { sh: 'lux', sp: 15, brand: 'Kronvik', tier: 3, req: 400000000, unique: true, up: 0.015, dep: 0.05, vol: 0.06, happy: 20, fame: 30, acts: ['custom', 'service', 'roadtrip', 'race'] })
+    I('Kronvik Ragnarok Unica', '🏁', 185000000, { sh: 'lux', sp: 15, brand: 'Kronvik', tier: 3, req: 400000000, unique: true, up: 0.015, dep: 0.05, vol: 0.06, happy: 20, fame: 30, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Torrente Furioso', '🏁', 4400000, { sh: 'lux', sp: 16, brand: 'Torrente', tier: 0, req: 0, up: 0.03, dep: 0, happy: 11, fame: 8, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Torrente Sangue SVJ', '🏁', 24000000, { sh: 'lux', sp: 17, brand: 'Torrente', tier: 1, req: 40000000, up: 0.025, dep: 0.01, happy: 13, fame: 12, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Torrente Contatto LP', '🏁', 85000000, { sh: 'lux', sp: 18, brand: 'Torrente', tier: 2, req: 150000000, up: 0.02, dep: 0.025, happy: 16, fame: 20, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Torrente Egocentro Unica', '🏁', 500000000, { sh: 'lux', sp: 19, brand: 'Torrente', tier: 3, req: 400000000, unique: true, vol: 0.06, up: 0.015, dep: 0.05, happy: 25, fame: 40, acts: ['custom', 'service', 'roadtrip', 'race'] })
   ] },
   boat: { label: 'Boats', icon: '🛥️', acts: ['sail', 'party', 'service', 'rent'], items: [
     I('Jet Ski', '🚤', 15000, { sh: 'itA', sp: 8, up: 0.08, dep: -0.1, happy: 4 }),
