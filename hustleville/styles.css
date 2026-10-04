@@ -381,3 +381,28 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 .rgrid .rn .mk{font-size:8px;padding:2px 3px;right:-4px;top:-8px}
 
 .handbtns{display:flex;gap:4px;margin-top:6px}.onTable{text-align:center;margin:-2px 0 6px;font-size:13px;opacity:.9}.onTable b{color:#f5c542}
+
+/* breathing mini game */
+.brx{position:fixed;inset:0;z-index:300;background:radial-gradient(ellipse at 50% 40%,#16305f 0%,#0b1430 55%,#050a1c 100%);color:#e9f3ff;display:flex;align-items:center;justify-content:center;overflow:hidden;animation:brfade .6s}
+@keyframes brfade{from{opacity:0}to{opacity:1}}
+.brstars i{position:absolute;width:var(--s);height:var(--s);border-radius:50%;background:#fff;opacity:.2;animation:brtw 5s infinite ease-in-out}
+@keyframes brtw{0%,100%{opacity:.1;transform:translateY(0)}50%{opacity:.7;transform:translateY(-8px)}}
+.brin,.brstage{position:relative;z-index:2;width:min(92vw,400px);max-height:100%;overflow:auto;padding:18px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+.brtitle{font-size:28px;font-weight:700;letter-spacing:.5px}.brin p{margin:0 0 4px;opacity:.85;line-height:1.4}
+.brcard{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:inherit;cursor:pointer;transition:transform .15s,background .15s}
+.brcard:hover{background:rgba(255,255,255,.14);transform:translateY(-2px)}.brcard span{font-size:30px}.brcard b{display:block;font-size:16px}.brcard small{opacity:.75}
+.brskip{margin-top:6px;padding:10px 22px;border-radius:99px;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;font-size:14px;cursor:pointer}.brskip:hover{background:rgba(255,255,255,.12)}
+.brx-close{position:absolute;right:10px;top:8px;background:none;border:0;color:#fff;font-size:20px;opacity:.7;cursor:pointer}
+.brname{opacity:.8;letter-spacing:1px}
+.brwrap{position:relative;width:min(78vw,300px);aspect-ratio:1;display:grid;place-items:center;margin:10px 0}
+.brring{position:absolute;inset:-4%;width:108%;height:108%}
+.brbubble{--c1:#7be7ff;--c2:#2a7fff;width:100%;height:100%;border-radius:50%;display:grid;place-items:center;transform:scale(.42);will-change:transform;
+  background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.85) 0,rgba(255,255,255,.18) 14%,transparent 15%),radial-gradient(circle at 50% 50%,var(--c1) 0%,var(--c2) 78%);
+  box-shadow:0 0 60px var(--c2),inset 0 0 38px rgba(255,255,255,.35);transition:background .8s,box-shadow .8s}
+.brbubble.holding{box-shadow:0 0 90px var(--c1),inset 0 0 44px rgba(255,255,255,.5)}
+.brbubble span{font-size:54px;font-weight:700;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.35)}
+.brbubble.done{width:110px;height:110px;transform:none;animation:brbob 3s infinite ease-in-out}@keyframes brbob{50%{transform:scale(1.12)}}
+.brlabel{font-size:30px;font-weight:700;min-height:40px;transition:color .5s}.brlabel.in{color:#7be7ff}.brlabel.hold{color:#d8b6ff}.brlabel.out{color:#8cf5c8}
+.brdots{display:flex;gap:8px}.brdots i{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.2)}.brdots i.cur{background:#fff;box-shadow:0 0 8px #fff}.brdots i.on{background:#8cf5c8}
+.brbar{display:flex;gap:12px;align-items:center;margin-top:8px}.brmini{width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;font-size:18px;cursor:pointer}
+.brfx{font-size:18px;margin:8px 0 14px;line-height:1.8}

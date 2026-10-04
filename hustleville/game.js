@@ -861,6 +861,7 @@ const A = {
     save(); refresh(); renderFeed();
   },
   fun(id) {
+    if (id === 'meditate') return openBreathe();
     const a = ACTIVITIES.find(x => x.id === id); S.done[id] = true; S.cash -= a.cost; if (id === 'travel') S.trips++; else S.hobbies++;
     const r = a.run(S);
     S.happy = clamp(S.happy + (r.happy || 0)); S.health = clamp(S.health + (r.health || 0)); S.smarts = clamp(S.smarts + (r.smarts || 0)); S.looks = clamp(S.looks + (r.looks || 0)); S.fame = Math.max(0, S.fame + (r.fame || 0)); S.cash += r.cash || 0;
