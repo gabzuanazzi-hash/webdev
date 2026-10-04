@@ -855,14 +855,18 @@ const A = {
   },
   call(k) { S.done[k] = true; addKarma(1); S.happy = clamp(S.happy + 3); say('📞', `You called ${k === 'mom' ? 'Mom' : 'Dad'}. It felt good.`, 'good'); save(); refresh(); renderFeed(); },
   crime(id) {
-    const c = CRIMES.find(x => x.id === id); const caught = c.risk + S.heat * 0.03 - S.smarts / 500 - luckAdj() * 0.08;
-    S.heat += 2; addKarma(-3);
-    if (chance(caught)) {
-      const yrs = ri(c.jail[0], c.jail[1]);
-      if (yrs === 0) { const f = Math.max(500, Math.round(Math.max(0, S.cash) * 0.05)); S.cash -= f; say('🚔', `You got caught (${c.n}) and paid a ${fmt(f)} fine.`, 'bad'); }
-      else { S.jail = yrs; S.record++; S.job = null; S.jobYears = 0; S.fame = Math.max(0, S.fame - 5); say('🚔', `Busted for "${c.n}"! Sentenced to ${yrs} year(s) in prison.`, 'bad'); checkAch(); }
-    } else { const g = Math.round(rnd(c.reward[0], c.reward[1])); S.cash += g; say(c.icon, `You got away with it: ${c.n}. +${fmt(g)}.`, 'gold'); }
-    save(); refresh(); renderFeed();
+    const c = CRIMES.find(x => x.id === id), caught = c.risk + S.heat * 0.03 - S.smarts / 500 - luckAdj() * 0.08;
+    const done = (busted, skill) => {                                  // skill: true when a mini game was won (better loot)
+      S.heat += 2; addKarma(-3);
+      if (busted) {
+        const yrs = ri(c.jail[0], c.jail[1]);
+        if (yrs === 0) { const f = Math.max(500, Math.round(Math.max(0, S.cash) * 0.05)); S.cash -= f; say('🚔', `You got caught (${c.n}) and paid a ${fmt(f)} fine.`, 'bad'); }
+        else { S.jail = yrs; S.record++; S.job = null; S.jobYears = 0; S.fame = Math.max(0, S.fame - 5); say('🚔', `Busted for "${c.n}"! Sentenced to ${yrs} year(s) in prison.`, 'bad'); checkAch(); }
+      } else { const g = Math.round(skill ? rnd((c.reward[0] + c.reward[1]) / 2, c.reward[1]) : rnd(c.reward[0], c.reward[1])); S.cash += g; say(c.icon, `You got away with it: ${c.n}. +${fmt(g)}.`, 'gold'); }
+      save(); refresh(); renderFeed();
+    };
+    if (id === 'heist' && typeof openHeist === 'function') return openHeist((ok) => done(ok === null ? chance(caught) : !ok, ok === true));
+    done(chance(caught), false);
   },
   fun(id) {
     if (id === 'meditate') return openBreathe();

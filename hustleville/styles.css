@@ -427,3 +427,20 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 .gylv{display:flex;gap:6px;margin-bottom:4px}.gylv button{padding:7px 16px;border-radius:99px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.06);color:#fff;cursor:pointer}.gylv button.on{background:#ff8a3d;border-color:#fff;font-weight:700}
 .gycoach{font-size:38px;font-weight:700;min-height:48px;color:#ffd45e;text-align:center}.gysub{opacity:.8;min-height:22px;text-align:center;max-width:300px}
 .gybar{width:min(80vw,300px);height:6px;border-radius:3px;background:rgba(255,255,255,.15);overflow:hidden}.gybar i{display:block;height:100%;background:linear-gradient(90deg,#ff8a3d,#ffd45e);width:0}
+
+/* heist mini game */
+.htx{background:radial-gradient(ellipse at 50% 30%,#2a1020 0%,#10060f 60%,#050205 100%)}
+.htp{margin:0;text-align:center;opacity:.9;max-width:300px}
+.htlock{width:min(86vw,300px)}.htpin{transition:transform .25s}.htpin.set{transform:translateY(-14px)}.htpin.set .htpinr{fill:#6ee6a0}
+#htpick{transform-origin:40px 100px}#htpick.snap{animation:htsnap .4s}@keyframes htsnap{30%{transform:rotate(-14deg) translateX(-6px)}60%{transform:rotate(10deg)}}
+.httrack{position:relative;width:min(80vw,300px);height:30px;border-radius:15px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);overflow:hidden}
+.htzone{position:absolute;top:0;bottom:0;background:rgba(80,230,140,.55);box-shadow:0 0 12px #50e68c}
+.htmark{position:absolute;top:2px;bottom:2px;width:6px;margin-left:-3px;border-radius:3px;background:#fff;box-shadow:0 0 8px #fff}
+.htpicks{font-size:22px;letter-spacing:4px}.htbtn{margin-top:10px;background:linear-gradient(#e24a5a,#a3182b);box-shadow:0 6px 0 #5e0d19,0 10px 24px rgba(0,0,0,.45)}
+.htcase{position:relative;width:min(70vw,260px);aspect-ratio:1;border-radius:16px;background:radial-gradient(circle at 50% 40%,#2c2250,#120c24);border:1px solid rgba(255,255,255,.15);cursor:pointer;overflow:hidden}
+.htcase svg{width:100%;height:100%}.htdia{transform-origin:100px 100px;animation:htfloat 2s infinite ease-in-out}@keyframes htfloat{50%{transform:translateY(-5px)}}
+.htdia.grab{animation:none;transition:transform .6s ease-in,opacity .6s;transform:translateY(120px) scale(.2);opacity:0}
+#htGlass{transition:opacity .15s}.htflash{position:absolute;inset:0;pointer-events:none;opacity:0}
+.htcase.broken{animation:htshake .25s}.htcase.broken .htflash{animation:htalarm .6s infinite;background:rgba(255,40,60,.4)}
+@keyframes htshake{25%{transform:translate(-5px,3px)}75%{transform:translate(5px,-3px)}}@keyframes htalarm{0%,100%{opacity:0}50%{opacity:1}}
+.htfuse{width:min(70vw,260px);height:8px;border-radius:4px;background:rgba(255,255,255,.15);overflow:hidden}.htfuse i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ff3b4e,#ffb36b)}
