@@ -245,17 +245,18 @@ const CRIMES = [
   { id: 'heist', icon: '💎', n: 'Jewelry store heist', reward: [500000, 2500000], risk: 0.55, jail: [5, 12], minAge: 20 }
 ];
 
-/* ---------------- Fun / crazy stuff ---------------- */
+/* ---------------- Activities (grouped) ---------------- */
+const ACT_GROUPS = [['body', '💪 Body & health'], ['mind', '🧠 Mind & learning'], ['adv', '🌍 Travel & adventure'], ['money', '🎰 Games of chance'], ['fame', '⭐ Fame & image']];
 const ACTIVITIES = [
-  { id: 'gym', icon: '🏋️', n: 'Hit the gym', cost: 600, minAge: 14, run: s => ({ health: 6, looks: 3, happy: 2, msg: 'You got a solid workout routine going.' }) },
-  { id: 'study', icon: '📖', n: 'Study hard', cost: 0, minAge: 6, run: s => ({ smarts: 6, happy: -1, msg: 'You hit the books.' }) },
-  { id: 'therapy', icon: '🛋️', n: 'See a therapist', cost: 3000, minAge: 14, run: s => ({ happy: 10, msg: 'Therapy helped you clear your head.' }) },
-  { id: 'travel', icon: '🧳', n: 'Backpack across the world', cost: 4000, minAge: 18, run: s => ({ happy: 12, smarts: 3, msg: 'You came back with stories and a tan.' }) },
-  { id: 'skydive', icon: '🪂', n: 'Skydive', cost: 400, minAge: 18, run: s => Math.random() < 0.03 ? { health: -50, msg: 'The chute failed. Ouch.' } : { happy: 10, fame: 1, msg: 'Best rush of your life.' } },
-  { id: 'surgery', icon: '💉', n: 'Plastic surgery', cost: 15000, minAge: 18, run: s => Math.random() < 0.12 ? { looks: -12, happy: -8, msg: 'The surgery went badly.' } : { looks: 15, happy: 4, msg: 'You look fresh.' } },
-  { id: 'casino', icon: '🎰', n: 'Gamble $1,000 at the casino', cost: 1000, minAge: 21, run: s => { const r = Math.random(); if (r < 0.04) return { cash: 25000, happy: 10, msg: 'JACKPOT! +$25,000' }; if (r < 0.4) return { cash: 2000, happy: 4, msg: 'You doubled up. +$2,000' }; return { happy: -3, msg: 'The house wins.' }; } },
-  { id: 'podcast', icon: '🎙️', n: 'Start a podcast', cost: 1500, minAge: 16, run: s => ({ fame: 3, smarts: 1, happy: 3, msg: 'Your podcast found a small audience.' }) },
-  { id: 'viral', icon: '🔥', n: 'Post something outrageous', cost: 0, minAge: 13, run: s => Math.random() < 0.3 ? { fame: 8, happy: 5, msg: 'It went VIRAL.' } : { fame: -1, happy: -4, msg: 'Nobody cared. Cringe.' } },
-  { id: 'pr', icon: '📰', n: 'Hire a PR agency', cost: 50000, minAge: 18, run: s => ({ fame: 10, msg: 'Your name is in all the right magazines.' }) },
-  { id: 'charity', icon: '🎗️', n: 'Host a charity gala', cost: 100000, minAge: 21, run: s => ({ fame: 8, happy: 8, msg: 'You raised millions and looked great doing it.' }) }
+  { id: 'gym', grp: 'body', fx: 'Health +6 · Looks +3', icon: '🏋️', n: 'Hit the gym', cost: 600, minAge: 14, run: s => ({ health: 6, looks: 3, happy: 2, msg: 'You got a solid workout routine going.' }) },
+  { id: 'study', grp: 'mind', fx: 'Smarts +6', icon: '📖', n: 'Study hard', cost: 0, minAge: 6, run: s => ({ smarts: 6, happy: -1, msg: 'You hit the books.' }) },
+  { id: 'therapy', grp: 'body', fx: 'Happiness +10', icon: '🛋️', n: 'See a therapist', cost: 3000, minAge: 14, run: s => ({ happy: 10, msg: 'Therapy helped you clear your head.' }) },
+  { id: 'travel', grp: 'adv', fx: 'Happiness +12 · Smarts +3', icon: '🧳', n: 'Backpack across the world', cost: 4000, minAge: 18, run: s => ({ happy: 12, smarts: 3, msg: 'You came back with stories and a tan.' }) },
+  { id: 'skydive', grp: 'adv', fx: 'Happiness +10 · Fame +1 · 3% fatal', icon: '🪂', n: 'Skydive', cost: 400, minAge: 18, run: s => Math.random() < 0.03 ? { health: -50, msg: 'The chute failed. Ouch.' } : { happy: 10, fame: 1, msg: 'Best rush of your life.' } },
+  { id: 'surgery', grp: 'body', fx: 'Looks +15 · small risk', icon: '💉', n: 'Plastic surgery', cost: 15000, minAge: 18, run: s => Math.random() < 0.12 ? { looks: -12, happy: -8, msg: 'The surgery went badly.' } : { looks: 15, happy: 4, msg: 'You look fresh.' } },
+  { id: 'casino', grp: 'money', fx: '4% jackpot $25K · 36% double · else lose', icon: '🎰', n: 'Gamble at the casino', cost: 1000, minAge: 21, run: s => { const r = Math.random(); if (r < 0.04) return { cash: 25000, happy: 10, msg: 'JACKPOT! +$25,000' }; if (r < 0.4) return { cash: 2000, happy: 4, msg: 'You doubled up. +$2,000' }; return { happy: -3, msg: 'The house wins.' }; } },
+  { id: 'podcast', grp: 'fame', fx: 'Fame +3 · Smarts +1', icon: '🎙️', n: 'Start a podcast', cost: 1500, minAge: 16, run: s => ({ fame: 3, smarts: 1, happy: 3, msg: 'Your podcast found a small audience.' }) },
+  { id: 'viral', grp: 'fame', fx: '30% viral · else cringe', icon: '🔥', n: 'Post something outrageous', cost: 0, minAge: 13, run: s => Math.random() < 0.3 ? { fame: 8, happy: 5, msg: 'It went VIRAL.' } : { fame: -1, happy: -4, msg: 'Nobody cared. Cringe.' } },
+  { id: 'pr', grp: 'fame', fx: 'Fame +10', icon: '📰', n: 'Hire a PR agency', cost: 50000, minAge: 18, run: s => ({ fame: 10, msg: 'Your name is in all the right magazines.' }) },
+  { id: 'charity', grp: 'fame', fx: 'Fame +8 · Happiness +8', icon: '🎗️', n: 'Host a charity gala', cost: 100000, minAge: 21, run: s => ({ fame: 8, happy: 8, msg: 'You raised millions and looked great doing it.' }) }
 ];

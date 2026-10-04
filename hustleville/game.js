@@ -89,7 +89,7 @@ function stageIdx() {
 
 /* ---------- state ---------- */
 let S = null;
-const UI = { panel: null, sub: { money: 'jobs', crazy: 'crime', social: 'post' }, hub: null, startOpen: false, src: null, cat: 'home' };
+const UI = { panel: null, sub: { money: 'jobs', crazy: 'fun', social: 'post' }, hub: null, startOpen: false, src: null, cat: 'home' };
 UI.sub.shop = 'shop';
 let modalQueue = [];
 let C = null; // active contract
@@ -542,7 +542,7 @@ const locked = () => S.jail > 0 ? `<div class="note bad">⛓️ You are in priso
 function renderPanel() {
   const hubOpen = UI.panel === 'money' && UI.sub.money === 'biz' && UI.hub != null && S.biz[UI.hub];
   const money = hubOpen ? (UI.src ? 'Sourcing' : HUBS[S.biz[UI.hub].id].name) : { jobs: 'Careers', biz: 'Business Empire', invest: 'Invest' }[UI.sub.money];
-  const T = { money: [money, moneyHTML], social: ['Social Media', socialHTML], love: ['Love & Family', loveHTML], shop: ['Asset Shop', shopHTML], crazy: ['Crazy', crazyHTML], status: ['Life & Goals', statusHTML] }[UI.panel];
+  const T = { money: [money, moneyHTML], social: ['Social Media', socialHTML], love: ['Love & Family', loveHTML], shop: ['Asset Shop', shopHTML], crazy: ['Activities', crazyHTML], status: ['Life & Goals', statusHTML] }[UI.panel];
   $('sheetTitle').textContent = T[0];
   const view = [UI.panel, UI.sub.money, UI.sub.social, UI.sub.crazy, UI.hub, UI.src ? (UI.src.sel ? 's2' : 's1') : 0, UI.startOpen, UI.sub.shop, UI.cat].join('|');
   const y = view === renderPanel.last ? $('sheetBody').scrollTop : 0;
@@ -715,8 +715,8 @@ function loveHTML() {
 }
 
 function crazyHTML() {
-  const head = tabs('crazy', [['crime', '😈 Crime'], ['fun', '🎢 Crazy stuff']]);
-  if (UI.sub.crazy === 'fun') return head + ACTIVITIES.map(a => `<div class="row"><span class="ic">${a.icon}</span><div class="grow"><b>${a.n}</b><small>${a.cost ? fmt(a.cost) : 'Free'}</small></div><button class="btn sm" ${S.age >= a.minAge && S.cash >= a.cost && !S.done[a.id] && !S.jail ? '' : 'disabled'} data-a="fun" data-v="${a.id}">${S.age < a.minAge ? a.minAge + '+' : S.done[a.id] ? 'Done' : 'Do it'}</button></div>`).join('');
+  const head = tabs('crazy', [['fun', '🎯 Activities'], ['crime', '😈 Crime']]);
+  if (UI.sub.crazy === 'fun') return head + ACT_GROUPS.map(([gk, gl]) => `<h5>${gl}</h5>` + ACTIVITIES.filter(a => a.grp === gk).map(a => `<div class="row"><span class="ic">${a.icon}</span><div class="grow"><b>${a.n}</b><small>${a.cost ? fmt(a.cost) : 'Free'} · ${a.fx}</small></div><button class="btn sm" ${S.age >= a.minAge && S.cash >= a.cost && !S.done[a.id] && !S.jail ? '' : 'disabled'} data-a="fun" data-v="${a.id}">${S.age < a.minAge ? a.minAge + '+' : S.done[a.id] ? 'Done' : 'Do it'}</button></div>`).join('')).join('');
   return head + `<div class="note">Heat: ${S.heat} · Record: ${S.record} arrest(s). Higher heat means more risk. Heat halves each year.</div>` + CRIMES.map(c => {
     const why = S.age < c.minAge ? c.minAge + '+' : c.smarts && S.smarts < c.smarts ? 'Smarts ' + c.smarts : c.biz && !S.biz.length ? 'Needs business' : c.cash && S.cash < c.cash ? 'Needs cash' : '';
     return `<div class="row"><span class="ic">${c.icon}</span><div class="grow"><b>${c.n}</b><small>${fmt(c.reward[0])}–${fmt(c.reward[1])} · risk ~${Math.round((c.risk + S.heat * 0.03) * 100)}%</small></div><button class="btn sm bad" ${why || S.jail ? 'disabled' : ''} data-a="crime" data-v="${c.id}">${why || 'Try'}</button></div>`;
