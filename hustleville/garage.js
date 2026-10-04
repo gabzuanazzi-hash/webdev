@@ -75,6 +75,27 @@ const Garage = (() => {
     return pending[key];
   }
 
+  function kit(g, data, v, WL, w, h) {
+    let r = 0, gg = 0, b = 0, n = 0; for (let i = 0; i < w * h; i += 7) { if (v.pm[i * 4 + 1] > 200) { r += data[i * 4]; gg += data[i * 4 + 1]; b += data[i * 4 + 2]; n++; } } n = n || 1; const av = [r / n, gg / n, b / n];
+    const col = (k) => `rgb(${Math.min(255, av[0] * k) | 0},${Math.min(255, av[1] * k) | 0},${Math.min(255, av[2] * k) | 0})`;
+    const ws = WL.map(([fx, fy, frx, fry]) => ({ x: fx * w, y: fy * h, rx: frx * w, ry: fry * h })).sort((a, b) => a.x - b.x);
+    if (ws.length > 1) {                                                  // side skirt + front lip: dark carbon strips along the bottom edge
+      const a = ws[0], q = ws[ws.length - 1]; g.save(); g.lineCap = 'round';
+      g.strokeStyle = 'rgba(14,16,22,.92)'; g.lineWidth = Math.max(4, h * 0.02); g.beginPath(); g.moveTo(a.x + a.rx * 1.3, a.y + a.ry * 0.62); g.lineTo(q.x - q.rx * 1.3, q.y + q.ry * 0.7); g.stroke();
+      g.strokeStyle = 'rgba(200,205,220,.4)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(a.x + a.rx * 1.3, a.y + a.ry * 0.56); g.lineTo(q.x - q.rx * 1.3, q.y + q.ry * 0.64); g.stroke();
+      g.strokeStyle = 'rgba(14,16,22,.95)'; g.lineWidth = Math.max(5, h * 0.024); g.beginPath(); g.moveTo(q.x + q.rx * 1.3, q.y + q.ry * 0.9); g.lineTo(Math.min(w - 6, q.x + q.rx * 3.2), q.y + q.ry * 0.82); g.stroke(); g.restore();
+    }
+    for (const q of ws) {                                                 // flared arches: a bolted fender lip over the top of each wheel
+      const t0 = Math.PI * 1.04, t1 = Math.PI * 1.98, irx = q.rx * 1.2, iry = q.ry * 1.1, th = q.rx * 0.3, N = 28;
+      g.save(); g.translate(q.x, q.y - q.ry * 0.02); g.rotate(-0.08); g.beginPath();
+      for (let k = 0; k <= N; k++) { const t = t0 + (t1 - t0) * k / N; g.lineTo(Math.cos(t) * (irx + th), Math.sin(t) * (iry + th)); }
+      for (let k = N; k >= 0; k--) { const t = t0 + (t1 - t0) * k / N; g.lineTo(Math.cos(t) * irx, Math.sin(t) * iry); }
+      g.closePath(); const gr = g.createLinearGradient(0, -iry - th, 0, 0); gr.addColorStop(0, col(1.2)); gr.addColorStop(1, col(0.7));
+      g.fillStyle = gr; g.fill(); g.lineWidth = 1.5; g.strokeStyle = 'rgba(12,16,30,.9)'; g.stroke();
+      g.fillStyle = 'rgba(20,22,30,.95)'; for (let k = 1; k < 8; k++) { const t = t0 + (t1 - t0) * k / 8; g.beginPath(); g.arc(Math.cos(t) * (irx + th * 0.5), Math.sin(t) * (iry + th * 0.5), Math.max(1.1, h * 0.0045), 0, 7); g.fill(); }
+      g.restore();
+    }
+  }
   const sstep = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
   // renders (key, mods) to a canvas. o.pad: transparent border (fraction of width) so glows are not clipped. o.glow: glow strength (0 = none)
   function compose(key, m, o) {
@@ -97,7 +118,7 @@ const Garage = (() => {
       for (let y = 0; y < WP.bh; y++) for (let x = 0; x < WP.bw; x++) {
         const px = WP.bx + x, py = WP.by + y, i = py * w + px, k = i * 4, mk = pm[k + 1]; if (!mk) continue;
         const R = pm[k]; let sh = Math.min(1.12, R / 150); sh = 0.2 + 0.9 * sh; if (matte) sh = 0.45 + 0.55 * sh;
-        const hh = Math.max(0, (R - 150) / 105) * (matte ? 0.1 : 0.4), t = (y * WP.bw + x) * 4, a = mk / 255;
+        const hh = Math.max(0, (R - 150) / 105) * (matte ? 0.1 : 0.4), t = (y * WP.bw + x) * 4, a = Math.min(1, mk / 170);
         const r = WP.d[t] * sh * (1 - hh) + 255 * hh, g = WP.d[t + 1] * sh * (1 - hh) + 255 * hh, b = WP.d[t + 2] * sh * (1 - hh) + 255 * hh;
         data[k] = data[k] * (1 - a) + r * a; data[k + 1] = data[k + 1] * (1 - a) + g * a; data[k + 2] = data[k + 2] * (1 - a) + b * a;
       }
@@ -134,6 +155,7 @@ const Garage = (() => {
         const sh = tctx.createRadialGradient(-0.15, -0.15, 0.35, 0, 0, 1.05); sh.addColorStop(0, 'rgba(8,12,30,0)'); sh.addColorStop(1, 'rgba(8,12,30,0.5)'); tctx.fillStyle = sh; tctx.fillRect(-1.1, -1.1, 2.2, 2.2); tctx.restore();
       }
     }
+    if (m.wide && !ent.info.wide && WL) kit(tctx, data, v, WL, w, h);              // sprites without a widebody art get a drawn kit: flares, bolts, skirt, lip
     ctx.drawImage(tmp, pad, 0);
     const gl = o.glow == null ? 1 : o.glow;
     if (gl > 0) {
@@ -258,7 +280,7 @@ const Garage = (() => {
     dot('kit', d.wide !== cur.wide); dot('paint', d.paint !== cur.paint || d.finish !== cur.finish); dot('wrap', d.wrap !== cur.wrap); dot('wheel', d.wheel !== cur.wheel); dot('lights', d.light !== cur.light); dot('neon', d.neon !== cur.neon);
     const box = $g('garOpts'); let h = '';
     if (G.tab === 'kit') {
-      if (!info.wide) h = `<div class="gar-note">One-off and bike bodywork cannot take a widebody kit. Try paint, a wrap, wheels or lights instead.</div>`;
+      if (!(info.wide || (info.wheels && info.wheels.stock))) h = `<div class="gar-note">Bikes do not take a widebody kit. Try paint, a wrap or lights instead.</div>`;
       else h = `<div class="gar-grid two">${tile(thumb({ ...d, wide: 0 }) + '<b>Stock</b><small>Factory body</small>', !d.wide, 'data-k="wide" data-v="0"')}${tile(thumb({ ...d, wide: 1 }) + `<b>Widebody</b><small>${cur.wide ? 'Fitted ✓' : fm(PRICE.wide(a))}</small><i class="hot">+Style</i>`, !!d.wide, 'data-k="wide" data-v="1"')}</div><div class="gar-note">Flared arches, splitter, skirts and a wing. Adds value, fame and a big grin.</div>`;
     } else if (G.tab === 'paint') {
       const sw = (p, k) => p.c ? `<i class="sw" style="background:radial-gradient(circle at 32% 28%,#fff9 0 12%,transparent 30%),${hex(p.c)}"></i>` : `<i class="sw stock"></i>`;
