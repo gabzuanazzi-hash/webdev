@@ -23,3 +23,10 @@ Posting is a lottery: most posts do little, some go viral, a few break out, and 
 - `styles.css`, `index.html`: UI
 - `assets/`: logo, wordmark, Runway art. `design/mockups/`: Runway layout references
 - `garage.js`: the car Garage — widebody kits, 14 paints (gloss/matte), 3 anime itasha wraps, headlight colours and underglow neons, rendered live on a canvas from Runway sprites in `assets/garage/` (`<car>-stock|wide.webp`, `*-pm.png` paint maps, `meta.json` lamp positions)
+
+## Play locally
+1. Download or clone this branch and open the `hustleville` folder.
+2. Mac/Linux: run `./play.sh` — Windows: double-click `play.bat` (needs Python 3). Or run `python3 -m http.server 8000` there.
+3. Open http://localhost:8000 in your browser.
+
+A local server is needed (instead of double-clicking index.html) so the Garage can recolor the car images.
