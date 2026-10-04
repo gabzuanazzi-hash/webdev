@@ -25,7 +25,7 @@ const PRODUCT_IDEAS = [
 ];
 
 HUBS.ecom = {
-  id: 'ecom', icon: '🛒', sprite: 0, banner: 0, name: 'Dropshipping Store', tag: 'online', cost: 3000,
+  id: 'ecom', icon: '🛒', sprite: 0, banner: 0, name: 'Dropshipping Store', tag: 'online', cost: 0, lvlBase: 3000,
   kind: 'Supplier Agreement', partner: 'Supplier',
   blurb: 'Find winning products, run ads, keep customers happy. What you do during the year decides the profit.',
   init(b) { b.hub = { products: [], adVisitors: 0, adSpend: 0, conv: 2.2, rating: 4.0, costMult: 1, rel: 60, backlog: 0, brand: 10, email: 0, orders: 0 }; },
@@ -177,7 +177,7 @@ HUBS.ecom = {
    2. NIGHTCLUB
    ========================================================= */
 HUBS.club = {
-  id: 'club', icon: '🪩', sprite: 1, banner: 1, name: 'Nightclub', tag: 'offline', cost: 40000,
+  id: 'club', icon: '🪩', sprite: 1, banner: 1, name: 'Nightclub', tag: 'offline', cost: 40000, lvlBase: 40000,
   kind: 'Venue Lease Agreement', partner: 'Landlord',
   blurb: 'Build the hype, book acts, keep the crowd safe and the inspector happy. Run the venue every weekend of the year.',
   init(b) { b.hub = { hype: 25, safety: 45, clean: 55, staff: 6, morale: 60, sound: 1, cover: 15, drinks: 2, stock: 60, locals: 50, strikes: 0, acts: 0, closed: false }; },
@@ -302,7 +302,7 @@ const CREATOR_NICHES = ['Fitness & wellness', 'Cosplay & costumes', 'Gaming', 'L
 const PERSONAS = ['cautious', 'ambitious', 'laid-back'];
 
 HUBS.agency = {
-  id: 'agency', icon: '📸', sprite: 2, banner: 2, name: 'Creator Agency', tag: 'online', cost: 8000,
+  id: 'agency', icon: '📸', sprite: 2, banner: 2, name: 'Creator Agency', tag: 'online', cost: 0, lvlBase: 8000,
   kind: 'Creator Management Agreement', partner: 'Platform partner',
   blurb: 'Manage adult creators on a subscription platform: recruit them with fair offers, plan content, protect them, and keep them healthy. Their success is your income.',
   init(b) { b.hub = { creators: [], prospects: [], rep: 40, chatters: 0, legal: 0, compliance: 30 }; },

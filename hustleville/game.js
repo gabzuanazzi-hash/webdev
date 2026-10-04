@@ -69,7 +69,7 @@ function stageIdx() {
 
 /* ---------- state ---------- */
 let S = null;
-const UI = { panel: null, sub: { money: 'jobs', crazy: 'crime', social: 'post' }, hub: null, cat: 'home' };
+const UI = { panel: null, sub: { money: 'jobs', crazy: 'crime', social: 'post' }, hub: null, startOpen: false, cat: 'home' };
 let modalQueue = [];
 let C = null; // active contract
 
@@ -87,7 +87,7 @@ function newLife() {
     job: null, jobYears: 0, deg: false, college: null,
     biz: [], assets: [], invest: { savings: 0, index: 0, crypto: 0 },
     candidate: null, partner: null, kids: [], mom, dad,
-    jail: 0, record: 0, heat: 0, done: {}, ach: [], market: 1, log: [], peakNW: 0, xp: 0, hobbies: 0, trips: 0, goals: [], social: socialInit()
+    jail: 0, record: 0, heat: 0, done: {}, ach: [], market: 1, log: [], peakNW: 0, xp: 0, hobbies: 0, trips: 0, goals: [], social: socialInit(), payments: []
   };
   S.log.push({ age: 0, items: [] });
   say('👶', `You were born in ${country.n} ${country.f} to a ${FAMILIES[tier].n} family.`, '');
@@ -109,7 +109,6 @@ const GOAL_POOL = [
   { id: 'date', t: 'Go on a date night', ok: s => !!s.partner, chk: s => s.done.date },
   { id: 'meet', t: 'Meet someone new', ok: s => s.age >= 18 && !s.partner, chk: s => s.done.meet },
   { id: 'upg', t: 'Level up a business', ok: s => s.biz.length > 0, chk: s => s.done.upg },
-  { id: 'sign', t: 'Sign a contract', ok: s => s.age >= 16, chk: s => s.done.sign },
   { id: 'inv', t: 'Invest some money', ok: s => s.age >= 18, chk: s => s.done.inv },
   { id: 'apply', t: 'Apply for a job', ok: s => s.age >= 14 && !s.job && !s.college, chk: s => s.done.apply },
   { id: 'viral', t: 'Post something outrageous', ok: s => s.age >= 13, chk: s => s.done.viral },
@@ -145,7 +144,7 @@ function contractMult(c, trapActive) {
   if (c.trapId && !c.trapStruck) m *= TRAPS.find(t => t.id === c.trapId).mult;
   return m;
 }
-function bizEstimate(b) { return b.last ? Math.max(0, b.last.profit) : HUBS[b.id].cost * 0.2; }
+function bizEstimate(b) { return b.last ? Math.max(0, b.last.profit) : HUBS[b.id].lvlBase * 0.2; }
 function bizValue(b) { return HUBS[b.id].value(b); }
 function assetValue(a) { return a.value; }
 function netWorth() {
@@ -197,7 +196,7 @@ function checkAch() {
 
 /* ---------- save / load ---------- */
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
-function load() { try { const r = localStorage.getItem(SAVE_KEY); if (r) { S = JSON.parse(r); S.xp = S.xp || 0; S.hobbies = S.hobbies || 0; S.trips = S.trips || 0; S.goals = S.goals || []; S.social = S.social || socialInit(); return true; } } catch (e) { /* ignore */ } return false; }
+function load() { try { const r = localStorage.getItem(SAVE_KEY); if (r) { S = JSON.parse(r); S.xp = S.xp || 0; S.hobbies = S.hobbies || 0; S.trips = S.trips || 0; S.goals = S.goals || []; S.social = S.social || socialInit(); S.payments = S.payments || []; return true; } } catch (e) { /* ignore */ } return false; }
 
 /* ---------- modals ---------- */
 function showModal(m) {
@@ -316,6 +315,9 @@ function ageUp() {
   });
   if (bizProfit > 1e8) S.fame += 4; else if (bizProfit > 1e7) S.fame += 3; else if (bizProfit > 1e6) S.fame += 2; else if (bizProfit > 1e5) S.fame += 1;
   socialYear();
+
+  // installments from business sales
+  S.payments = (S.payments || []).filter(p => { S.cash += p.amt; income += p.amt; say('🤝', `Sale installment received: ${fmt(p.amt)}.`, 'good'); return --p.left > 0; });
 
   // investments
   const iv = S.invest;
@@ -471,22 +473,25 @@ function bizHTML() {
   if (S.biz.length) {
     h += '<h5>Your businesses</h5>';
     S.biz.forEach((b, i) => {
-      const H = HUBS[b.id], c = b.contract, up = Math.round(H.cost * Math.pow(2, b.level - 1) * 1.5);
+      const H = HUBS[b.id], up = Math.round(H.lvlBase * Math.pow(2, b.level - 1) * 1.5);
       h += `<div class="bcard"><div class="btile">${art('hubs', H.sprite, 56, H.icon)}<em>Lvl ${b.level}</em></div>
         <div class="binfo"><b>${H.name}</b><div class="inc"><i class="coin-ic s">$</i>${b.last ? fmt(b.last.profit) + ' last year' : 'New business'}</div>
-        <small>${ENERGY_ON ? '⚡ ' + b.ap + '/' + apMax(b) + ' actions left · ' : ''}📄 ${c.cp} · ${c.share}% · ${b.termLeft > 0 ? b.termLeft + ' yr left' : '<b class="bad">EXPIRED</b>'}${c.trapId && !c.trapStruck ? ' · ⚠️ fine print' : ''}</small></div>
-        <button class="gbtn" data-a="openHub" data-v="${i}">OPEN HUB${ENERGY_ON ? '<small>⚡ ' + b.ap + '</small>' : ''}</button>
-        <div class="bmini"><button class="mini" ${b.level < 10 && S.cash >= up ? '' : 'disabled'} data-a="upgrade" data-v="${i}">⬆️ Level up ${b.level < 10 ? fmt(up) : 'MAX'}</button><button class="mini" data-a="renew" data-v="${i}">📄 ${b.termLeft > 0 ? 'Re-negotiate' : 'Renew'}</button><button class="mini" data-a="sell" data-v="${i}">Sell ${fmt(bizValue(b) * 0.8)}</button></div></div>`;
+        <small>Open the hub to run it. Worth about ${fmt(bizValue(b))}.</small></div>
+        <button class="gbtn" data-a="openHub" data-v="${i}">OPEN HUB</button>
+        <div class="bmini"><button class="mini" ${b.level < 10 && S.cash >= up ? '' : 'disabled'} data-a="upgrade" data-v="${i}">⬆️ Level up ${b.level < 10 ? fmt(up) : 'MAX'}</button><button class="mini" data-a="sell" data-v="${i}">✍️ Sell · sign a deal</button></div></div>`;
+    });
+  } else h += '<div class="note">You do not own a business yet.</div>';
+  const young = S.age < 16, open = UI.startOpen && !young;
+  h += `<button class="btn big ${open ? '' : 'gold'}" ${young || S.jail ? 'disabled' : ''} data-a="toggleStart">${young ? '🔒 Start a business (age 16)' : open ? '✕ Close' : '➕ Start a business'}</button>`;
+  if (open) {
+    h += '<h5>Choose a business</h5>';
+    Object.values(HUBS).forEach(H => {
+      const owned = S.biz.some(b => b.id === H.id);
+      h += `<div class="bcard"><div class="btile">${art('hubs', H.sprite, 56, H.icon)}<em>${H.tag}</em></div>
+        <div class="binfo"><b>${H.name}</b><small>${H.blurb}</small></div>
+        <button class="gbtn" ${owned || S.cash < H.cost ? 'disabled' : ''} data-a="start" data-v="${H.id}">${owned ? 'OWNED' : 'START'}<small>${H.cost ? fmt(H.cost) : 'FREE'}</small></button></div>`;
     });
   }
-  h += '<div class="plate sm">Start a business</div>';
-  const young = S.age < 16;
-  Object.values(HUBS).forEach(H => {
-    const owned = S.biz.some(b => b.id === H.id);
-    h += `<div class="bcard ${young ? 'locked' : ''}"><div class="btile">${art('hubs', H.sprite, 56, H.icon)}<em>${H.tag}</em></div>
-      <div class="binfo"><b>${H.name}</b><small>${H.blurb}</small></div>
-      <button class="gbtn" ${owned || S.cash < H.cost || young || S.jail ? 'disabled' : ''} data-a="start" data-v="${H.id}">${owned ? 'OWNED' : 'SIGN'}<small>${fmt(H.cost)}</small></button>${young ? '<div class="lock">🔒 UNLOCK: AGE 16</div>' : ''}</div>`;
-  });
   return h;
 }
 function hubHTML(i) {
@@ -590,8 +595,14 @@ const A = {
     save(); refresh(); renderFeed();
   },
   quit() { say('💼', `You quit your job as ${occupation()}.`, ''); S.job = null; S.jobYears = 0; save(); refresh(); renderFeed(); },
-  start(id) { openContract(id, 'start'); },
-  renew(i) { openContract(S.biz[i].id, 'renew', i); },
+  toggleStart() { UI.startOpen = !UI.startOpen; refresh(); },
+  start(id) {
+    const H = HUBS[id]; if (!H || S.cash < H.cost || S.biz.some(b => b.id === id) || S.age < 16) return;
+    S.cash -= H.cost;
+    const nb = { id, level: 1, termLeft: 999, contract: { cp: '—', share: 60, term: 3, excl: false, fee: true, trapId: null, trapStruck: true, revealed: true }, dilution: 0, ap: 0, log: [], last: null };
+    H.init(nb); nb.ap = apMax(nb); S.biz.push(nb); UI.hub = S.biz.length - 1; UI.startOpen = false;
+    say(H.icon, `You started ${H.name}${H.cost ? ' for ' + fmt(H.cost) : ''}.`, 'gold'); checkAch(); save(); refresh(); renderFeed();
+  },
   openHub(i) { UI.hub = +i; refresh(); },
   closeHub() { UI.hub = null; refresh(); },
   hubTask(v) {
@@ -604,15 +615,11 @@ const A = {
   },
   hubPhone(i) { const b = S.biz[+i]; if (!b || !canAp(b.ap, 1)) return; if (ENERGY_ON) b.ap--; S.done.hub = true; hubCall(b); },
   upgrade(i) {
-    const b = S.biz[i], H = HUBS[b.id], up = Math.round(H.cost * Math.pow(2, b.level - 1) * 1.5);
+    const b = S.biz[i], H = HUBS[b.id], up = Math.round(H.lvlBase * Math.pow(2, b.level - 1) * 1.5);
     if (S.cash < up || b.level >= 10) return; S.cash -= up; b.level++; b.ap += 1; S.done.upg = true; S.xp += 10 * b.level;
     say(H.icon, `You expanded ${H.name} to level ${b.level}.`, 'good'); S.fame += 0.5; checkAch(); save(); refresh(); renderFeed();
   },
-  sell(i) {
-    const b = S.biz[i], H = HUBS[b.id]; let v = bizValue(b) * 0.8;
-    if (b.termLeft > 0 && b.contract.fee) { const f = H.cost * 0.3; v -= f; say('📄', `Early termination fee: ${fmt(f)}.`, 'bad'); }
-    S.cash += v; say('🤝', `You sold ${H.name} for ${fmt(v)}.`, ''); S.biz.splice(i, 1); UI.hub = null; save(); refresh(); renderFeed();
-  },
+  sell(i) { openSale(+i); },
   buy(i) {
     const it = ASSETS[UI.cat].items[i]; if (S.cash < it.price) return;
     S.cash -= it.price; S.assets.push({ cat: UI.cat, idx: i, n: it.n, icon: it.icon, price: it.price, up: it.up, dep: it.dep, value: it.price });
@@ -688,27 +695,35 @@ const REP_LINES = {
   magnify: ['You are actually reading it? ...Impressive.', 'Nothing to see in the small print. Really.']
 };
 
-function openContract(defId, mode, idx) {
-  const d = HUBS[defId]; const m = d;
-  const old = mode === 'renew' ? S.biz[idx] : null;
-  C = {
-    d, mode, idx, cp: pick(COMPANIES) + ' ' + pick(['Ltd.', 'LLC', 'GmbH', 'Inc.', 'S.A.']), rep: pick(REPS),
-    share: 55, term: 3, excl: false, fee: true, trapId: chance(0.8) ? pick(TRAPS).id : null, trapRead: false, trapStruck: false,
-    tension: 0, ink: 0, say: pick(REP_LINES.open), level: old ? old.level : 1, dilution: old ? old.dilution : 0, cost: mode === 'start' ? d.cost : 0
-  };
+const SALE_TRAPS = [
+  { id: 'holdback', text: 'Section 6(b): 20% of the price is withheld for 12 months and can be reduced by up to 50% for any post-sale dispute.', fx: 0.93 },
+  { id: 'indemnity', text: 'Section 9(a): Seller indemnifies Buyer for every pre-sale liability, capped at 10% of the price.', fx: 0.92 },
+  { id: 'earnout', text: 'Section 4(c): The final price drops by 8% if first-year revenue falls short of the Seller\'s projections.', fx: 0.92 }
+];
+function salePrice(c) {
+  let p = c.value * c.pm;
+  if (c.nc) p *= 1.10;
+  if (c.inst) p *= 1.08;
+  if (c.trapId && !c.trapStruck) p *= SALE_TRAPS.find(t => t.id === c.trapId).fx;
+  return p;
+}
+function openSale(idx) {
+  const b = S.biz[idx], H = HUBS[b.id];
+  C = { idx, d: H, cp: pick(COMPANIES) + ' ' + pick(['Ltd.', 'LLC', 'GmbH', 'Inc.', 'S.A.']), rep: pick(REPS), value: bizValue(b), pm: 0.7, inst: false, nc: false,
+        trapId: chance(0.75) ? pick(SALE_TRAPS).id : null, trapRead: false, trapStruck: false, tension: 0, ink: 0, say: pick(REP_LINES.open) };
   $('contract').classList.add('open');
   $('cDesk').innerHTML = `
     <div class="rep"><span class="face">🧑‍💼</span><div class="bubble" id="cSay"></div></div>
     <div class="paper">
       <div class="lh"><b>${C.cp}</b><span class="seal">⚖️</span></div>
-      <h3>${m.kind.toUpperCase()}</h3>
-      <p class="pre">This Agreement is entered into between <b>${S.name}</b> ("Operator") and <b>${C.cp}</b> ("${m.partner}"), represented by ${C.rep}, for the operation of <b>${d.name}</b> (${d.tag} business).</p>
+      <h3>BUSINESS SALE AGREEMENT</h3>
+      <p class="pre">This Agreement is entered into between <b>${S.name}</b> ("Seller") and <b>${C.cp}</b> ("Buyer"), represented by ${C.rep}, for the sale of <b>${H.name}</b>, including its customers, stock and brand.</p>
       <div id="cClauses"></div>
       <div id="cFine"></div>
       <div class="sig"><canvas id="cCanvas" width="600" height="120"></canvas><span class="x">✗</span><button class="link" id="cClear">clear</button></div>
-      <div class="stamp" id="cStamp">SIGNED</div>
+      <div class="stamp" id="cStamp">SOLD</div>
     </div>
-    <div class="deskbar"><div id="cSum"></div><div class="btns"><button class="btn" id="cWalk">Walk away</button><button class="btn gold" id="cSign">✍️ Sign</button></div></div>`;
+    <div class="deskbar"><div id="cSum"></div><div class="btns"><button class="btn" id="cWalk">Keep the business</button><button class="btn gold" id="cSign">✍️ Sign &amp; sell</button></div></div>`;
   $('cSay').textContent = C.say;
   drawContract(); setupSignature();
   $('cWalk').onclick = () => closeContract();
@@ -718,32 +733,29 @@ function closeContract() { $('contract').classList.remove('open'); C = null; ref
 function repSay(t) { C.say = t; $('cSay').textContent = t; }
 
 function drawContract() {
-  const c = C; const trap = TRAPS.find(t => t.id === c.trapId);
+  const c = C, trap = SALE_TRAPS.find(t => t.id === c.trapId);
   $('cClauses').innerHTML = `<ol>
-    <li><b>Revenue share.</b> Operator retains <span class="chip">${c.share}%</span> of net revenue. <button class="link" data-c="share">negotiate ↑</button></li>
-    <li><b>Term.</b> ${[1, 3, 5].map(t => `<button class="opt ${c.term === t ? 'on' : ''}" data-c="term" data-v="${t}">${t} yr</button>`).join('')} <small>(longer term = steadier income)</small></li>
-    <li><b>Exclusivity.</b> <button class="opt ${c.excl ? 'on' : ''}" data-c="excl">${c.excl ? 'Exclusive (+15% profit)' : 'Non-exclusive'}</button></li>
-    <li><b>Early termination fee.</b> ${c.fee ? 'Operator pays 30% of startup cost if terminated early.' : '<s>Early termination fee</s> struck.'} ${c.fee ? '<button class="link" data-c="fee">negotiate away</button>' : '<small>(partner takes −3% revenue instead)</small>'}</li>
+    <li><b>Sale price.</b> Buyer offers <span class="chip">${fmt(c.value * c.pm)}</span> (${Math.round(c.pm * 100)}% of valuation). <button class="link" data-c="price">negotiate ↑</button></li>
+    <li><b>Payment.</b> <button class="opt ${!c.inst ? 'on' : ''}" data-c="pay" data-v="lump">Lump sum</button><button class="opt ${c.inst ? 'on' : ''}" data-c="pay" data-v="inst">3 yearly installments (+8%)</button></li>
+    <li><b>Non-compete.</b> <button class="opt ${!c.nc ? 'on' : ''}" data-c="nc" data-v="no">None</button><button class="opt ${c.nc ? 'on' : ''}" data-c="nc" data-v="yes">5 years (+10%)</button></li>
   </ol>`;
-  $('cFine').innerHTML = `<div class="fine ${c.trapRead ? 'read' : ''}"><small>Fine print: ${c.trapId ? (c.trapRead ? `<mark>${trap.text}</mark>` : `<span class="blur">${trap.text}</span>`) : 'Standard boilerplate. Nothing unusual.'}</small></div>
+  $('cFine').innerHTML = `<div class="fine"><small>Fine print: ${c.trapId ? (c.trapRead ? `<mark>${trap.text}</mark>` : `<span class="blur">${trap.text}</span>`) : 'Standard boilerplate. Nothing unusual.'}</small></div>
     ${c.trapRead && c.trapId && !c.trapStruck ? '<button class="link" data-c="strike">✂️ strike this clause</button>' : ''}${c.trapRead && c.trapStruck ? '<small class="g">Clause struck ✔</small>' : ''}
     ${c.trapRead ? '' : '<button class="link" data-c="read">🔍 read the fine print</button>'}`;
-  const mult = contractMult({ share: c.share, term: c.term, excl: c.excl, fee: c.fee, trapId: c.trapId, trapStruck: c.trapStruck }) * (1 - c.dilution);
-  $('cSum').innerHTML = `Upfront <b>${fmt(c.cost)}</b> · Profit multiplier <b class="${mult >= 1 ? 'g' : 'bad'}">×${mult.toFixed(2)}</b> · Cash ${fmt(S.cash)}`;
+  $('cSum').innerHTML = `You receive <b class="g">${fmt(salePrice(c))}</b>${c.inst ? ' over 3 years' : ' now'}${c.trapId && !c.trapRead ? ' · <span class="bad">unread fine print</span>' : ''}`;
   document.querySelectorAll('#cClauses [data-c], #cFine [data-c]').forEach(el => { el.onclick = () => contractAct(el.dataset.c, el.dataset.v); });
 }
 
 function negotiate(label, apply) {
   const p = clamp(0.3 + S.smarts / 250 + S.fame / 500 - C.tension * 0.15, 0.05, 0.9);
   if (chance(p)) { apply(); repSay(pick(REP_LINES.win)); }
-  else { C.tension++; repSay(pick(REP_LINES.lose)); if (C.tension >= 3) { say('📄', `${C.cp} walked out of the negotiation for ${C.d.name}.`, 'bad'); const cp = C.cp; closeContract(); renderFeed(); showModal({ icon: '🚪', title: 'They walked out', text: `${cp} lost patience and left the table.` }); return; } }
+  else { C.tension++; repSay(pick(REP_LINES.lose)); if (C.tension >= 3) { const cp = C.cp; say('📄', `${cp} walked out of the sale talks for ${C.d.name}.`, 'bad'); closeContract(); renderFeed(); showModal({ icon: '🚪', title: 'They walked out', text: `${cp} lost patience and left the table.` }); return; } }
   drawContract();
 }
 function contractAct(k, v) {
-  if (k === 'share') { if (C.share >= 80) return repSay('That\'s as high as it goes.'); negotiate('share', () => { C.share += 5; }); }
-  else if (k === 'term') { C.term = +v; drawContract(); }
-  else if (k === 'excl') { C.excl = !C.excl; drawContract(); }
-  else if (k === 'fee') negotiate('fee', () => { C.fee = false; });
+  if (k === 'price') { if (C.pm >= 1.05) return repSay('That is as high as I can go.'); negotiate('price', () => { C.pm = +(C.pm + 0.05).toFixed(2); }); }
+  else if (k === 'pay') { C.inst = v === 'inst'; drawContract(); }
+  else if (k === 'nc') { C.nc = v === 'yes'; drawContract(); }
   else if (k === 'read') { C.trapRead = true; repSay(pick(REP_LINES.magnify)); drawContract(); }
   else if (k === 'strike') negotiate('strike', () => { C.trapStruck = true; });
 }
@@ -761,16 +773,15 @@ function setupSignature() {
 
 function signContract() {
   if (C.ink < 150) return repSay('You haven\'t signed yet. Put your name on the line.');
-  if (S.cash < C.cost) return repSay('You don\'t have the funds for the upfront fee.');
   $('cStamp').classList.add('show');
-  const c = C;
+  const c = C, price = salePrice(c);
   setTimeout(() => {
-    const contract = { cp: c.cp, share: c.share, term: c.term, excl: c.excl, fee: c.fee, trapId: c.trapId, trapStruck: c.trapStruck, revealed: c.trapRead };
-    if (c.mode === 'start') {
-      S.cash -= c.cost; S.done.sign = true; const nb = { id: c.d.id, level: 1, termLeft: c.term, contract, dilution: 0, ap: 0, log: [], last: null }; HUBS[nb.id].init(nb); nb.ap = apMax(nb); S.biz.push(nb); UI.hub = S.biz.length - 1; UI.panel = 'money'; UI.sub.money = 'biz'; $('sheet').classList.add('open');
-      say('✍️', `You signed with ${c.cp} and launched ${c.d.name} for ${fmt(c.cost)}.`, 'gold');
-    } else { const b = S.biz[c.idx]; b.contract = contract; b.termLeft = c.term; S.done.sign = true; say('✍️', `You signed a new ${c.term}-year contract with ${c.cp} for ${c.d.name}.`, 'gold'); }
-    checkAch(); save(); closeContract(); renderFeed();
+    const b = S.biz[c.idx];
+    if (c.inst) { S.cash += price / 3; S.payments.push({ amt: price / 3, left: 2 }); } else S.cash += price;
+    S.done.sign = true; S.biz.splice(c.idx, 1); UI.hub = null;
+    say('✍️', `You sold ${c.d.name} to ${c.cp} for ${fmt(price)}${c.inst ? ' (paid over 3 years)' : ''}.`, 'gold');
+    if (c.trapId && !c.trapStruck) say('😬', 'The fine print in the sale cost you part of the price.', 'bad');
+    save(); closeContract(); renderFeed();
   }, 1000);
 }
 
