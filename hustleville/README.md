@@ -22,4 +22,4 @@ Posting is a lottery: most posts do little, some go viral, a few break out, and 
 - `game.js`: state, age-up engine, panels, contract-signing desk
 - `styles.css`, `index.html`: UI
 - `assets/`: logo, wordmark, Runway art. `design/mockups/`: Runway layout references
-- `garage.js`: the car Garage — widebody kits, 14 paints (gloss/matte) and headlight colours, rendered live on a canvas from Runway sprites in `assets/garage/` (`<car>-stock|wide.webp`, `*-pm.png` paint maps, `meta.json` lamp positions)
+- `garage.js`: the car Garage — widebody kits, 14 paints (gloss/matte), 3 anime itasha wraps, headlight colours and underglow neons, rendered live on a canvas from Runway sprites in `assets/garage/` (`<car>-stock|wide.webp`, `*-pm.png` paint maps, `meta.json` lamp positions)
