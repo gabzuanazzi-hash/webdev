@@ -295,7 +295,7 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 .gar-flash { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 40%, #ffffff66 50%, transparent 60%); transform: translateX(-100%); } .gar-flash.go { animation: garsweep .6s ease-out; } @keyframes garsweep { to { transform: translateX(100%); } }
 .gar-stage.night .gar-wall, .gar-stage.night .gar-floor { filter: brightness(.35); } .gar-stage.night .gar-spot { opacity: .15; } .gar-stage.night { background: #03060f; }
 .gar-tools { position: absolute; right: 8px; top: 8px; display: flex; gap: 6px; z-index: 3; } .gar-tools button { font: 600 .72rem Fredoka, sans-serif; padding: 6px 10px; border-radius: 999px; border: 2px solid #ffffff44; background: #0a1730cc; color: var(--ink); cursor: pointer; touch-action: none; user-select: none; } .gar-tools button.on { background: var(--gold); color: #4a2800; border-color: var(--gold); }
-.gar-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 10px 10px 6px; } .gar-tabs button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 7px 4px; border-radius: 14px; border: 2px solid var(--line); background: #0a1730; color: var(--ink); font-size: 1.15rem; cursor: pointer; } .gar-tabs button span { font: 600 .68rem Fredoka, sans-serif; }
+.gar-tabs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 10px 10px 6px; } .gar-tabs button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 7px 4px; border-radius: 14px; border: 2px solid var(--line); background: #0a1730; color: var(--ink); font-size: 1.15rem; cursor: pointer; } .gar-tabs button span { font: 600 .68rem Fredoka, sans-serif; }
 .gar-tabs button.on { border-color: var(--gold); background: linear-gradient(#27487f, #17315c); } .gar-tabs button.dirty::after { content: ""; position: absolute; top: 5px; right: 8px; width: 9px; height: 9px; border-radius: 50%; background: #ffd400; box-shadow: 0 0 8px #ffd400; }
 .gar-opts { padding: 4px 10px 8px; overflow-y: auto; min-height: 150px; max-height: 232px; }
 .gar-grid { display: grid; gap: 7px; } .gar-grid.paints { grid-template-columns: repeat(3, 1fr); } .gar-grid.lights { grid-template-columns: repeat(2, 1fr); } .gar-grid.two { grid-template-columns: repeat(2, 1fr); }
@@ -311,3 +311,17 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 .gar-tabs { gap: 4px; padding-left: 8px; padding-right: 8px; } .gar-tabs button span { font-size: .6rem; }
 .gt .jp { position: absolute; top: 3px; left: 5px; font: 700 .62rem 'Noto Sans JP', sans-serif; font-style: normal; color: #fff; background: #d02a7acc; padding: 0 4px; border-radius: 5px; }
 .gar-cv.pulse { animation: garpulse 2.2s ease-in-out infinite; } @keyframes garpulse { 50% { filter: drop-shadow(0 12px 10px #0009) brightness(1.1) saturate(1.15); } }
+
+.gar-tabs button { font-size: 1rem; padding: 6px 2px; } .gar-tabs button span { font-size: .55rem; }
+.gar-grid.wheels { grid-template-columns: repeat(3, 1fr); } .gt .wimg { width: 62px; height: 62px; object-fit: contain; filter: drop-shadow(0 3px 3px #0008); } .gt .stockw { display: grid; place-items: center; font-style: normal; font-size: 2rem; opacity: .5; }
+
+/* ---- cars: big card ---- */
+.card.carcard { padding: 0; overflow: hidden; }
+.carstage { position: relative; display: grid; place-items: center; padding: 14px 10px 6px; background: radial-gradient(ellipse at 50% 38%, #2f5ea3 0, #16305f 55%, #0d1d3e 100%); border-bottom: 2px solid #ffffff1c; min-height: 150px; }
+.carstage::after { content: ""; position: absolute; left: 14%; right: 14%; bottom: 8px; height: 14px; border-radius: 50%; background: radial-gradient(#0009, transparent 70%); }
+.carhero { position: relative; z-index: 1; width: 100%; max-width: 340px; height: auto; filter: drop-shadow(0 8px 8px #0008); } .carstage .art { position: relative; z-index: 1; }
+.carcard .cinfo { padding: 10px 12px 2px; } .carcard .cinfo > b { font: 1.15rem var(--title); } .carcard .cstats { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 4px 0 6px; font-size: .78rem; color: var(--ink); opacity: .9; } .carcard .cstats b { color: var(--gold); }
+.ctags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; } .ctags i { font-style: normal; font-size: .62rem; font-weight: 600; background: #ffd40022; color: var(--gold); border: 1px solid #ffd40055; border-radius: 999px; padding: 1px 8px; }
+.carcard .btns { padding: 8px 12px 12px; }
+.avpick { display: flex; gap: 8px; flex-wrap: wrap; } .avpick button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; width: 68px; border-radius: 14px; border: 2px solid var(--line); background: #0a1730; color: var(--ink); cursor: pointer; font: inherit; } .avpick button.on { border-color: var(--gold); background: #1d3a6c; } .avpick small { font-size: .62rem; } .avpick .art { background-color: #1d7a86; }
+.art.av { background-repeat: no-repeat; background-color: var(--teal); }

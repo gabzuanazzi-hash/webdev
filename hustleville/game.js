@@ -57,8 +57,22 @@ function art(key, idx, B, fb) {
   const cx = ((idx % a.cols) + 0.5) * a.A / a.cols, cy = (Math.floor(idx / a.cols) + 0.5) / a.rows;
   return `<span class="art" style="width:${B}px;height:${B}px;background-image:url(${a.src});background-size:${a.A * k}px ${k}px;background-position:${B / 2 - cx * k}px ${B / 2 - cy * k}px"></span>`;
 }
+/* ---------- profile characters ---------- */
+const AVATARS = [
+  { k: 'classic', n: 'Classic', who: 'Everyone' },
+  { k: 'auburn', n: 'Ruby', who: 'Woman', src: 'assets/avatars/auburn.webp' },
+  { k: 'brown', n: 'Ben', who: 'Man', src: 'assets/avatars/brown.webp' },
+  { k: 'bob', n: 'Mei', who: 'Woman', src: 'assets/avatars/bob.webp' },
+  { k: 'fade', n: 'Marcus', who: 'Man', src: 'assets/avatars/fade.webp' }
+];
+const avatarOf = () => AVATARS.find(a => a.k === (S && S.avatar)) || AVATARS[0];
+function avatarImg(av, idx, B) {                       // idx = life stage 0..7 (baby..ghost), 4x2 atlas of 192px cells
+  return `<span class="art av" style="width:${B}px;height:${B}px;border-radius:50%;background-image:url(${av.src});background-size:${B * 4}px ${B * 2}px;background-position:${-(idx % 4) * B}px ${-Math.floor(idx / 4) * B}px"></span>`;
+}
 // Avatar crop: zoom into the head and shoulders so the face fills the circle.
+function avatarArt0(idx, B) { const f = avatarArt; const old = S.avatar; S.avatar = 'classic'; const r = f(idx, B, stageIcon()); S.avatar = old; return r; }
 function avatarArt(idx, B, fb) {
+  const av = avatarOf(); if (av.src) return avatarImg(av, idx, B);
   const a = ART.stages;
   if (!a || !a.ok) return fb;
   const zoom = [0.4, 0.58, 0.62, 0.62, 0.62, 0.62, 0.62, 0.52][idx] || 0.62, dy = [0.5, 0.45, 0.44, 0.44, 0.44, 0.44, 0.42, 0.5][idx] || 0.44;
@@ -92,7 +106,7 @@ function newLife() {
     cash: 0, happy: ri(65, 95), health: ri(70, 100), smarts: ri(20, 80), looks: ri(20, 90), fame: 0,
     job: null, jobYears: 0, deg: false, college: null,
     biz: [], assets: [], invest: { savings: 0, index: 0, crypto: 0 },
-    candidate: null, partner: null, kids: [], mom, dad,
+    avatar: pick(AVATARS.slice(1)).k, candidate: null, partner: null, kids: [], mom, dad,
     jail: 0, record: 0, heat: 0, done: {}, ach: [], market: 1, log: [], peakNW: 0, xp: 0, hobbies: 0, trips: 0, goals: [], social: socialInit(), payments: []
   };
   S.log.push({ age: 0, items: [] });
@@ -634,6 +648,16 @@ function stuffHTML() {
       const d = ACTS[id], cost = Math.round(d.cost(a)), why = !d.toggle && used[id] ? 'Done this year' : S.cash < cost ? 'Need ' + fmt(cost) : S.jail ? 'In prison' : '';
       return `<button class="mini" ${why ? 'disabled title="' + why + '"' : ''} data-a="itemAct" data-v="${i}:${id}">${d.icon} ${actLabel(id, a)}${cost ? ' ' + fmt(cost) : ''}</button>`;
     }).join('');
+    if (a.cat === 'car' && typeof Garage !== 'undefined' && Garage.keyOf(a)) {
+      const mods = Garage.norm(a.mods), tags = [mods.wide ? '🏁 Widebody' : '', mods.paint ? '🎨 Custom paint' : '', mods.wrap ? '🌸 Wrap' : '', mods.wheel ? '🛞 Wheels' : '', mods.light ? '💡 Lights' : '', mods.neon ? '🌈 Neon' : ''].filter(Boolean);
+      h += `<div class="card item carcard"><div class="carstage">${Garage.hero(a, () => itemArt(a.cat, it, 96))}</div>
+        <div class="cinfo"><b>${a.n}</b> ${a.rented ? '<i class="tag">Rented out</i>' : ''}
+        <div class="cstats"><span>💰 Worth <b>${fmt(a.value)}</b></span><span>🔧 Upkeep <b>${a.up ? fmt(a.price * a.up) + '/yr' : 'none'}</b></span></div>
+        <div class="sb"><label>Condition</label><div class="bar"><i style="width:${c}%;background:${hcol(c)}"></i></div><b>${Math.round(c)}</b></div>
+        ${tags.length ? `<div class="ctags">${tags.map(t => `<i>${t}</i>`).join('')}</div>` : ''}${it.perk ? `<span class="perk">${it.perk}</span>` : ''}</div>
+        <div class="btns">${btns}<button class="mini" data-a="sellAsset" data-v="${i}">💵 Sell ${fmt(sellValue(a))}</button></div></div>`;
+      return;
+    }
     h += `<div class="card item"><div class="row nobg"><span class="ic">${carArt(a, 52)}</span><div class="grow"><b>${a.n}</b> ${a.rented ? '<i class="tag">Rented out</i>' : ''}
       <small>Worth ${fmt(a.value)} · ${a.up ? 'upkeep ' + fmt(a.price * a.up) + '/yr' : 'no upkeep'}${a.cat === 'pet' ? ' · bond ' + Math.round(a.bond == null ? 50 : a.bond) + ' · age ' + (a.age || 0) : ''}</small>
       ${DECAY[a.cat] ? `<div class="sb"><label>Condition</label><div class="bar"><i style="width:${c}%;background:${hcol(c)}"></i></div><b>${Math.round(c)}</b></div>` : ''}${it.perk ? `<span class="perk">${it.perk}</span>` : ''}</div></div>
@@ -700,6 +724,7 @@ function statusHTML() {
     <h5>Milestones ${S.ach.length}/${ACH.length}</h5>
     <div class="trophies">${ACH.map(a => { const u = S.ach.includes(a.id); return `<div class="trophy ${u ? '' : 'lockd'}"><span style="background-image:url(assets/runway/ui/${u ? 'trophy' : 'trophy-lock'}.png)">${u ? '🏆' : '🔒'}</span>${a.t.split(' — ')[0]}</div>`; }).join('')}</div>
     <h5>Stats</h5>${bar('👑 Fame', S.fame, 'y')}${bar('⚡ Power', power, 'b')}${bar('😊 Happy', S.happy, 'g')}${bar('🧠 Smarts', S.smarts, 'b')}${bar('✨ Looks', S.looks, 'y')}${bar('❤️ Health', S.health, 'r')}
+    <h5>Your look</h5><div class="avpick">${AVATARS.map(v => `<button class="${avatarOf().k === v.k ? 'on' : ''}" data-a="setAvatar" data-v="${v.k}">${v.src ? avatarImg(v, Math.min(stageIdx(), 7), 54) : avatarArt0(stageIdx(), 54)}<small>${v.n}</small></button>`).join('')}</div>
     <h5>Life</h5><button class="btn sm bad" data-a="restart">Start a new life</button>`;
 }
 
@@ -824,6 +849,7 @@ const A = {
     if (n) say('🎯', `You claimed ${n} goal reward${n > 1 ? 's' : ''}.`, 'gold');
     save(); refresh(); renderFeed();
   },
+  setAvatar(k) { if (!AVATARS.some(v => v.k === k)) return; S.avatar = k; save(); refresh(); },
   restart() { showModal({ icon: '⚠️', title: 'Start over?', text: 'This ends your current life and starts a new one.', buttons: [{ t: 'New life', cls: 'bad', fn: () => { newLife(); closePanel(); renderFeed(); refresh(); } }, { t: 'Cancel' }] }); }
 };
 

@@ -18,6 +18,7 @@ const Garage = (() => {
     { n: 'Hot red', c: [255, 62, 62] }, { n: 'Gold', c: [255, 202, 64] }, { n: 'Pink', c: [255, 92, 196] }, { n: 'Cyan', c: [70, 255, 240] }
   ];
   const WRAPS = [{ n: 'None' }, { n: 'Sakura Idol', f: 'wrap-sakura.webp', jp: 'さくら' }, { n: 'Neon Tokyo', f: 'wrap-neon.webp', jp: '東京' }, { n: 'Drift Team', f: 'wrap-drift.webp', jp: '走り屋' }, { n: 'Kitsune Miko', f: 'wrap-kitsune.webp', jp: '狐' }, { n: 'Mecha Pilots', f: 'wrap-mecha.webp', jp: '出撃' }, { n: 'Magic Stars', f: 'wrap-magic.webp', jp: '魔法' }];
+  const WHEELS = [{ n: 'Stock' }, { n: 'Chrome Star' }, { n: 'Gold Mesh' }, { n: 'Matte Blade' }, { n: 'Classic White' }, { n: 'Red Lip' }, { n: 'Turbine' }, { n: 'Carbon Aero' }, { n: 'Neon Ring' }, { n: 'Rose Gold' }, { n: 'Bronze Forged' }, { n: 'Blue Anodized' }, { n: 'Spinner' }, { n: 'Gunmetal Mesh' }, { n: 'Racing Yellow' }, { n: 'Wire Spoke' }, { n: 'Violet Swirl' }];
   const NEONS = [{ n: 'Off' }, { n: 'Cyan', c: [40, 240, 255] }, { n: 'Magenta', c: [255, 50, 210] }, { n: 'Violet', c: [150, 80, 255] }, { n: 'Lime', c: [140, 255, 60] }, { n: 'Red', c: [255, 50, 60] }, { n: 'Blue', c: [50, 110, 255] }, { n: 'Ice white', c: [235, 245, 255] }, { n: 'Rainbow', rainbow: true }];
   const hex = (c) => c ? `rgb(${c[0]},${c[1]},${c[2]})` : '#fff';
   const PRICE = {
@@ -26,11 +27,12 @@ const Garage = (() => {
     matte: (a) => Math.max(300, Math.round(a.price * 0.004)),
     light: (a) => Math.max(400, Math.round(a.price * 0.004)),
     wrap: (a) => Math.max(3500, Math.round(a.price * 0.035)),
-    neon: (a) => Math.max(900, Math.round(a.price * 0.008))
+    neon: (a) => Math.max(900, Math.round(a.price * 0.008)),
+    wheel: (a) => Math.max(1800, Math.round(a.price * 0.025))
   };
   const keyOf = (a) => a && a.cat === 'car' ? CAR_KEY[a.n] : null;
-  const norm = (m) => ({ wide: m && m.wide ? 1 : 0, paint: m && m.paint > 0 && m.paint < PAINTS.length ? m.paint | 0 : 0, finish: m && m.finish ? 1 : 0, light: m && m.light > 0 && m.light < LIGHTS.length ? m.light | 0 : 0, wrap: m && m.wrap > 0 && m.wrap < WRAPS.length ? m.wrap | 0 : 0, neon: m && m.neon > 0 && m.neon < NEONS.length ? m.neon | 0 : 0 });
-  const plain = (m) => !m.wide && !m.paint && !m.light && !m.wrap && !m.neon;
+  const norm = (m) => ({ wide: m && m.wide ? 1 : 0, paint: m && m.paint > 0 && m.paint < PAINTS.length ? m.paint | 0 : 0, finish: m && m.finish ? 1 : 0, light: m && m.light > 0 && m.light < LIGHTS.length ? m.light | 0 : 0, wrap: m && m.wrap > 0 && m.wrap < WRAPS.length ? m.wrap | 0 : 0, neon: m && m.neon > 0 && m.neon < NEONS.length ? m.neon | 0 : 0, wheel: m && m.wheel > 0 && m.wheel < WHEELS.length ? m.wheel | 0 : 0 });
+  const plain = (m) => !m.wide && !m.paint && !m.light && !m.wrap && !m.neon && !m.wheel;
 
   /* ---------- asset loading + canvas recolor ---------- */
   const cars = {}, pending = {}, caches = {}; let tainted = false, meta = null;
@@ -42,9 +44,9 @@ const Garage = (() => {
     const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0);
     return g.getImageData(0, 0, c.width, c.height);
   }
-  const WR = {}; let wrapsP = null;
+  const WR = {}; let wrapsP = null, WHL = null;
   function loadWraps() {
-    if (!wrapsP) wrapsP = Promise.all(WRAPS.map(async (w, i) => { if (!w.f) return; try { WR[i] = { img: await fetchImg(DIR + w.f), cache: {} }; } catch (e) { /* missing wrap art: skipped */ } }));
+    if (!wrapsP) wrapsP = Promise.all([fetchImg(DIR + 'wheels.webp').then(im => { WHL = im; }).catch(() => {})].concat(WRAPS.map(async (w, i) => { if (!w.f) return; try { WR[i] = { img: await fetchImg(DIR + w.f), cache: {} }; } catch (e) { /* missing wrap art: skipped */ } })));
     return wrapsP;
   }
   function wrapPixels(v, i) {                                       // wrap art stretched over the body-paint area of this variant, cached
@@ -120,7 +122,17 @@ const Garage = (() => {
       else { blob(cx, rx * 1.12, N.c, 0.5 * gn); blob(cx, rx * 0.8, N.c, 0.7 * gn); blob(cx, rx * 0.55, [255, 255, 255], 0.16 * gn); }
       ctx.restore();
     }
-    const tmp = document.createElement('canvas'); tmp.width = w; tmp.height = h; tmp.getContext('2d').putImageData(new ImageData(data, w, h), 0, 0); ctx.drawImage(tmp, pad, 0);
+    const tmp = document.createElement('canvas'); tmp.width = w; tmp.height = h; const tctx = tmp.getContext('2d'); tctx.putImageData(new ImageData(data, w, h), 0, 0);
+    const WL = ent.info.wheels && ent.info.wheels[m.wide && ent.info.wide ? 'wide' : 'stock'];
+    if (m.wheel && WL && WHL) {                                               // swap the rims: new wheel art squashed into each visible rim ellipse
+      const wi = m.wheel - 1, sx = (wi % 4) * 256, sy = Math.floor(wi / 4) * 256;
+      for (const [fx, fy, frx, fry, tilt] of WL) {
+        tctx.save(); tctx.translate(fx * w, fy * h); tctx.rotate(tilt * Math.PI / 180); tctx.scale(frx * w * 1.06, fry * h * 1.06);
+        tctx.beginPath(); tctx.arc(0, 0, 1, 0, 7); tctx.clip(); tctx.drawImage(WHL, sx, sy, 256, 256, -1, -1, 2, 2);
+        const sh = tctx.createRadialGradient(-0.15, -0.15, 0.35, 0, 0, 1.05); sh.addColorStop(0, 'rgba(8,12,30,0)'); sh.addColorStop(1, 'rgba(8,12,30,0.5)'); tctx.fillStyle = sh; tctx.fillRect(-1.1, -1.1, 2.2, 2.2); tctx.restore();
+      }
+    }
+    ctx.drawImage(tmp, pad, 0);
     const gl = o.glow == null ? 1 : o.glow;
     if (gl > 0) {
       ctx.globalCompositeOperation = 'lighter';
@@ -158,6 +170,12 @@ const Garage = (() => {
     const u = dataUrl(key, m, { glow: 0.6 }); return u ? `<img class="carimg" src="${u}" style="width:${B}px;height:${B}px" alt="">` : fallback(a, B, base);
   }
   function fallback(a, B, base) { return base(); }
+  // big hero picture for the car card: the full-width sprite (customised or stock) with its natural aspect ratio
+  function hero(a, base) {
+    const key = keyOf(a); if (!key) return base();
+    if (!ready(key)) { if (!tainted) load(key).then(() => { if (typeof S !== 'undefined' && S && typeof refresh === 'function') refresh(); }).catch(() => { tainted = true; }); return base(); }
+    const m = norm(a.mods), u = dataUrl(key, m, { glow: 0.55, pad: m.neon ? 0.03 : 0 }); return u ? `<img class="carhero" src="${u}" alt="${a.n}">` : base();
+  }
 
   /* ---------- the garage screen ---------- */
   let G = null, el = null;
@@ -169,6 +187,7 @@ const Garage = (() => {
     if ((d.paint !== cur.paint || d.finish !== cur.finish) && d.paint > 0) items.push([`${PAINTS[d.paint].n} respray${d.finish ? ' (matte)' : ''}`, PRICE.paint(a) + (d.finish ? PRICE.matte(a) : 0)]);
     if (d.light !== cur.light && d.light > 0) items.push([`${LIGHTS[d.light].n} headlights`, PRICE.light(a)]);
     if (d.wrap !== cur.wrap && d.wrap > 0) items.push([`${WRAPS[d.wrap].n} wrap`, PRICE.wrap(a)]);
+    if (d.wheel !== cur.wheel && d.wheel > 0) items.push([`${WHEELS[d.wheel].n} wheels`, PRICE.wheel(a)]);
     if (d.neon !== cur.neon && d.neon > 0) items.push([`${NEONS[d.neon].n} underglow`, PRICE.neon(a)]);
     return items;
   }
@@ -180,7 +199,7 @@ const Garage = (() => {
         <div class="gar-ring"></div><div class="gar-car" id="garCar"></div>
         <div class="gar-tools"><button id="garNight" title="Night preview">🌙 Night</button><button id="garCmp" title="Hold to compare with what you have now">👁 Compare</button></div>
         <div class="gar-flash" id="garFlash"></div></div>
-      <div class="gar-tabs" id="garTabs"><button data-t="kit">🏁<span>Body kit</span></button><button data-t="paint">🎨<span>Paint</span></button><button data-t="wrap">🌸<span>Wraps</span></button><button data-t="lights">💡<span>Lights</span></button><button data-t="neon">🌈<span>Neon</span></button></div>
+      <div class="gar-tabs" id="garTabs"><button data-t="kit">🏁<span>Kit</span></button><button data-t="paint">🎨<span>Paint</span></button><button data-t="wrap">🌸<span>Wraps</span></button><button data-t="wheel">🛞<span>Wheels</span></button><button data-t="lights">💡<span>Lights</span></button><button data-t="neon">🌈<span>Neon</span></button></div>
       <div class="gar-opts" id="garOpts"></div>
       <div class="gar-foot"><div class="gar-tot"><small id="garTotLbl">No changes</small><b id="garTot">$0</b></div><button class="btn" id="garReset">Undo</button><button class="btn gold" id="garApply">Apply</button></div>
     </div>`;
@@ -220,11 +239,16 @@ const Garage = (() => {
     else { const k = document.createElement('canvas'); k.width = 190; k.height = Math.round(190 * c.height / c.width); k.getContext('2d').drawImage(c, 0, 0, k.width, k.height); out = k; }
     return `<img src="${out.toDataURL('image/webp', 0.88)}" alt="">`;
   }
+  const wthumbs = {};
+  function wheelThumb(k) {
+    if (wthumbs[k]) return wthumbs[k]; if (!WHL) return '';
+    const c = document.createElement('canvas'); c.width = c.height = 120; const i = k - 1; c.getContext('2d').drawImage(WHL, (i % 4) * 256, Math.floor(i / 4) * 256, 256, 256, 0, 0, 120, 120); return (wthumbs[k] = c.toDataURL('image/webp', 0.9));
+  }
   function draw() {
     if (!G) return; const a = G.a, cur = norm(a.mods), d = G.d, info = (cars[G.key] || {}).info;
     $g('garTabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === G.tab));
     const dot = (t, on) => $g('garTabs').querySelector(`[data-t=${t}]`).classList.toggle('dirty', on);
-    dot('kit', d.wide !== cur.wide); dot('paint', d.paint !== cur.paint || d.finish !== cur.finish); dot('wrap', d.wrap !== cur.wrap); dot('lights', d.light !== cur.light); dot('neon', d.neon !== cur.neon);
+    dot('kit', d.wide !== cur.wide); dot('paint', d.paint !== cur.paint || d.finish !== cur.finish); dot('wrap', d.wrap !== cur.wrap); dot('wheel', d.wheel !== cur.wheel); dot('lights', d.light !== cur.light); dot('neon', d.neon !== cur.neon);
     const box = $g('garOpts'); let h = '';
     if (G.tab === 'kit') {
       if (!info.wide) h = `<div class="gar-note">🏍️ Bikes do not take a widebody kit. Try a new paint job or headlight colour instead.</div>`;
@@ -235,19 +259,22 @@ const Garage = (() => {
         PAINTS.map((p, k) => tile(thumb({ ...d, paint: k }) + `<b>${p.n}</b><small>${k === 0 ? 'Factory' : (cur.paint === k && cur.finish === d.finish ? 'Current ✓' : fm(PRICE.paint(a)))}</small>`, d.paint === k, `data-k="paint" data-v="${k}"`, 'car')).join('') + '</div>';
     } else if (G.tab === 'wrap') {
       h = `<div class="gar-grid paints">` + WRAPS.map((w, k) => tile(thumb({ ...d, wrap: k }) + `<b>${w.n}</b><small>${k === 0 ? 'No wrap' : (cur.wrap === k ? 'Current ✓' : fm(PRICE.wrap(a)))}</small>` + (w.jp ? `<i class="jp">${w.jp}</i>` : ''), d.wrap === k, `data-k="wrap" data-v="${k}"`, 'car')).join('') + `</div><div class="gar-note">Full anime itasha wraps with Japanese lettering. A wrap covers your paint; the gloss/matte finish still applies.</div>`;
+    } else if (G.tab === 'wheel') {
+      if (!(info.wheels && info.wheels.stock)) h = `<div class="gar-note">🏍️ Bikes keep their stock wheels. Try a paint job or a wrap instead.</div>`;
+      else h = `<div class="gar-grid wheels">` + WHEELS.map((w, k) => tile((k ? `<img class="wimg" src="${wheelThumb(k)}" alt="">` : '<i class="wimg stockw">🛞</i>') + `<b>${w.n}</b><small>${k === 0 ? 'Factory' : (cur.wheel === k ? 'Current ✓' : fm(PRICE.wheel(a)))}</small>`, d.wheel === k, `data-k="wheel" data-v="${k}"`)).join('') + `</div>`;
     } else if (G.tab === 'neon') {
       h = `<div class="gar-grid paints">` + NEONS.map((n, k) => tile(thumb({ ...d, neon: k }) + `<b>${n.n}</b><small>${k === 0 ? 'No underglow' : (cur.neon === k ? 'Current ✓' : fm(PRICE.neon(a)))}</small>`, d.neon === k, `data-k="neon" data-v="${k}"`, 'car')).join('') + `</div><div class="gar-note">Underglow neons light up the ground beneath the car. Try 🌙 Night.</div>`;
     } else {
       h = `<div class="gar-grid lights">` + LIGHTS.map((l, k) => tile(thumb({ ...d, light: k }, true) + `<b>${l.n}</b><small>${k === 0 ? 'Factory' : (cur.light === k ? 'Current ✓' : fm(PRICE.light(a)))}</small>`, d.light === k, `data-k="light" data-v="${k}"`, 'lamp')).join('') + `</div><div class="gar-note">Tap 🌙 Night above to see the beams.</div>`;
     }
     box.innerHTML = h; renderStage();
-    const items = costOf(a, d, cur), tot = items.reduce((s, x) => s + x[1], 0), dirty = d.wide !== cur.wide || d.paint !== cur.paint || d.finish !== cur.finish || d.light !== cur.light || d.wrap !== cur.wrap || d.neon !== cur.neon;
+    const items = costOf(a, d, cur), tot = items.reduce((s, x) => s + x[1], 0), dirty = d.wide !== cur.wide || d.paint !== cur.paint || d.finish !== cur.finish || d.light !== cur.light || d.wrap !== cur.wrap || d.neon !== cur.neon || d.wheel !== cur.wheel;
     $g('garTot').textContent = fm(tot); $g('garTotLbl').innerHTML = items.length ? items.map(x => `${x[0]} ${fm(x[1])}`).join(' · ') : (dirty ? 'Removing parts is free' : 'No changes');
     $g('garApply').disabled = !dirty || tot > S.cash; $g('garApply').textContent = tot > S.cash ? 'Not enough cash' : (dirty ? (tot ? 'Pay ' + fm(tot) : 'Apply') : 'Apply'); $g('garReset').disabled = !dirty;
   }
   function onOpt(e) {
     const b = e.target.closest('[data-k]'); if (!b || !G) return; const k = b.dataset.k, v = +b.dataset.v;
-    if (k === 'wide') G.d.wide = v; else if (k === 'paint') G.d.paint = v; else if (k === 'finish') G.d.finish = v; else if (k === 'light') G.d.light = v; else if (k === 'wrap') G.d.wrap = v; else if (k === 'neon') G.d.neon = v;
+    if (k === 'wide') G.d.wide = v; else if (k === 'paint') G.d.paint = v; else if (k === 'finish') G.d.finish = v; else if (k === 'light') G.d.light = v; else if (k === 'wrap') G.d.wrap = v; else if (k === 'neon') G.d.neon = v; else if (k === 'wheel') G.d.wheel = v;
     if ((k === 'light' || k === 'neon') && v) G.night = true;
     draw(); renderStage(true);
   }
@@ -261,11 +288,12 @@ const Garage = (() => {
     if (d.light !== cur.light && d.light > 0) { a.value += PRICE.light(a) * 0.3; msgs.push(`${LIGHTS[d.light].n.toLowerCase()} headlights`); }
     if (d.wrap !== cur.wrap && d.wrap > 0) { a.value += PRICE.wrap(a) * 0.4; S.fame += 0.4; S.happy = clamp(S.happy + 2); msgs.push(`the ${WRAPS[d.wrap].n} anime wrap`); }
     if (d.neon !== cur.neon && d.neon > 0) { a.value += PRICE.neon(a) * 0.3; S.fame += 0.1; msgs.push(`${NEONS[d.neon].n.toLowerCase()} underglow`); }
+    if (d.wheel !== cur.wheel && d.wheel > 0) { a.value += PRICE.wheel(a) * 0.4; S.happy = clamp(S.happy + 1); msgs.push(`${WHEELS[d.wheel].n.toLowerCase()} wheels`); }
     a.mods = { ...d };
     if (msgs.length && window.say) say('🔧', `Your ${a.n} got ${msgs.join(', ')}.`, 'gold');
     if (window.toast) toast(msgs.length ? 'Looking good! ' + (tot ? '-' + fm(tot) : '') : 'Saved.');
     S.done.item = true; if (window.save) save(); if (window.refresh) refresh(); if (window.renderFeed) renderFeed();
     draw(); renderStage(true);
   }
-  return { open, close, art, load, keyOf, norm, _G: () => G, get tainted() { return tainted; } };
+  return { open, close, art, hero, load, keyOf, norm, _G: () => G, get tainted() { return tainted; } };
 })();
