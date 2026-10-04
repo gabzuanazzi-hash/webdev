@@ -19,7 +19,7 @@ const SPORTS = {
 };
 
 const casS = () => { if (!S.cas) S.cas = { net: 0, rou: [], bj: null, fx: null, slip: [] }; return S.cas; };
-const casU = () => { if (!UI.cas) UI.cas = { game: 'rou', bet: 1000, busy: false, ang: 0, shown: 0, msg: '', pick: '' }; return UI.cas; };
+const casU = () => { if (!UI.cas) UI.cas = { game: 'rou', bet: 1000, hand: [1000], busy: false, ang: 0, shown: 0, msg: '', pick: '' }; return UI.cas; };
 const casMoney = (delta) => { casS().net += delta; S.cash += delta; };
 const casBet = () => Math.max(0, Math.min(casU().bet, Math.floor(S.cash)));
 function casNote(label, net) {                                      // life-log line for the big swings only
@@ -54,7 +54,7 @@ function rouHTML() {
   const mk = (k) => rb[k] ? `<i class="mk" style="background:${(CHIP_COL[CAS_CHIPS.slice().reverse().find(d => d <= rb[k]) || 100] || CHIP_COL[100])[0]}">${fmt(rb[k])}</i>` : '';
   const numBtns = Array.from({ length: 36 }, (_, i) => i + 1).map(n => `<button class="rn ${RED_NUMS.has(n) ? 'r' : 'b'} ${rb['n' + n] ? 'has' : ''}" ${off} data-a="rouPlace" data-v="n${n}">${n}${mk('n' + n)}</button>`).join('');
   return `<div class="rouwrap"><div class="rouptr">▼</div>${rouWheel().replace('class="rouwheel"', `class="rouwheel" style="--ang:${u.shown}deg"`)}</div>
-    <div class="casmsg">${u.busy ? '🎡 No more bets…' : u.msg || 'Tap the table to stack chips on as many spots as you like, then spin.'}</div>
+    <div class="casmsg">${u.busy ? '🎡 No more bets…' : u.msg || 'Add chips to your hand, then tap spots on the table to place them — as many spots as you like.'}</div>
     <div class="rhist">${c.rou.map(n => `<i class="${n === 0 ? 'g' : RED_NUMS.has(n) ? 'r' : 'b'}">${n}</i>`).join('')}</div>
     <div class="rctl"><button class="btn sm" ${lock || !u.hist || !u.hist.length ? 'disabled' : ''} data-a="rouUndo">↩ Undo</button><button class="btn sm" ${lock || !tot ? 'disabled' : ''} data-a="rouClear">🗑 Clear</button><button class="btn sm" ${lock || !u.last || !Object.keys(u.last).length ? 'disabled' : ''} data-a="rouRebet">🔁 Rebet</button></div>
     <button class="gbtn rspin" ${lock || !tot || tot > S.cash ? 'disabled' : ''} data-a="rouSpin">${tot ? `SPIN · ${fmt(tot)} on ${Object.keys(rb).length} spot${Object.keys(rb).length > 1 ? 's' : ''}` : 'PLACE A BET TO SPIN'}</button>
@@ -166,20 +166,25 @@ function casinoHTML() {
   const u = casU(), c = casS();
   const gm = [['rou', '🎡 Roulette'], ['bj', '🃏 Blackjack'], ['spt', '🏟️ Sports']];
   return `<div class="casbanner" style="background-image:url(assets/casino/${{ rou: 'roulette', bj: 'blackjack', spt: 'sports' }[u.game]}.webp)"><span>${gm.find(g => g[0] === u.game)[1]}</span></div>
-    <div class="stats3"><div><b>${fmt(S.cash)}</b><small>wallet</small></div><div><b class="${c.net < 0 ? 'bad' : 'good'}">${c.net < 0 ? '−' : '+'}${fmt(Math.abs(c.net))}</b><small>net result</small></div><div><b>${fmt(casBet())}</b><small>chip size</small></div></div>
+    <div class="stats3"><div><b>${fmt(S.cash)}</b><small>wallet</small></div><div><b class="${c.net < 0 ? 'bad' : 'good'}">${c.net < 0 ? '−' : '+'}${fmt(Math.abs(c.net))}</b><small>net result</small></div><div><b>${fmt(casBet())}</b><small>in hand</small></div></div>
     <div class="subtabs cas">${gm.map(([k, l]) => `<button class="${u.game === k ? 'on' : ''}" data-a="casGame" data-v="${k}">${l}</button>`).join('')}</div>
-    <div class="chiprack">${CAS_CHIPS.map(v => `<button class="chipb ${u.bet === v ? 'on' : ''}" ${S.cash < v ? 'disabled' : ''} data-a="casChip" data-v="${v}" title="${fmt(v)}">${chipSvg(v, 44)}<small>${fmt(v)}</small></button>`).join('')}<button class="chipb ${u.bet === Math.floor(S.cash) && S.cash > 0 ? 'on' : ''}" ${S.cash < 1 ? 'disabled' : ''} data-a="casChip" data-v="${Math.max(1, Math.floor(S.cash))}" title="All in">${chipSvg('all', 44)}<small>ALL IN</small></button></div>
-    <div class="betbox"><div class="betlbl"><small>${u.game === 'rou' ? 'ON THE TABLE' : 'YOUR BET'}</small><b>${fmt(u.game === 'rou' ? rouTotal() : casBet())}</b></div>${betStack(u.game === 'rou' ? rouTotal() : casBet())}</div>
+    <div class="chiprack">${CAS_CHIPS.map(v => `<button class="chipb" ${S.cash - u.bet < v ? 'disabled' : ''} data-a="casChip" data-v="${v}" title="Add ${fmt(v)}">${chipSvg(v, 44)}<small>+${fmt(v)}</small></button>`).join('')}<button class="chipb" ${S.cash < 1 ? 'disabled' : ''} data-a="casChip" data-v="-2" title="All in">${chipSvg('all', 44)}<small>ALL IN</small></button></div>
+    <div class="betbox"><div class="betlbl"><small>CHIPS IN HAND</small><b>${fmt(casBet())}</b><span class="handbtns"><button class="btn sm" ${u.bet ? '' : 'disabled'} data-a="casChip" data-v="-1">↩ Remove</button><button class="btn sm" ${u.bet ? '' : 'disabled'} data-a="casChip" data-v="0">✕ Reset</button></span></div>${betStack(casBet())}</div>
+    ${u.game === 'rou' ? `<div class="onTable">On the table: <b>${fmt(rouTotal())}</b></div>` : ''}
     ${{ rou: rouHTML, bj: bjHTML, spt: sportsHTML }[u.game]()}
     <div class="note">Play money only. The house always has an edge — roulette has a 2.7% edge, bookmakers keep ~8%.</div>`;
 }
 
 const CASINO_ACTS = {
   casGame(v) { casU().game = v; refresh(); },
-  casChip(v) { casU().bet = +v; casClick(); refresh(); },
+  casChip(v) {                                                        // chips add up in your hand: tap $500 three times = $1,500
+    const u = casU(); v = +v; if (!Array.isArray(u.hand)) u.hand = u.bet ? [u.bet] : [];
+    if (v === 0) u.hand = []; else if (v === -1) u.hand.pop(); else if (v === -2) u.hand = [Math.max(1, Math.floor(S.cash))]; else if (u.hand.reduce((s, x) => s + x, 0) + v <= Math.floor(S.cash)) u.hand.push(v);
+    u.bet = u.hand.reduce((s, x) => s + x, 0); casClick(); refresh();
+  },
   rouPlace(kind) {
     const u = casU(), rb = u.rb || (u.rb = {}); if (u.busy || S.jail) return;
-    const free = Math.floor(S.cash) - rouTotal(), amt = Math.min(u.bet, free); if (amt <= 0) return;
+    const free = Math.floor(S.cash) - rouTotal(), amt = Math.min(u.bet, free); if (amt <= 0) { u.msg = u.bet ? '💸 No cash left for more chips.' : '👆 Tap chips above to put some in your hand first.'; refresh(); return; }
     rb[kind] = (rb[kind] || 0) + amt; (u.hist = u.hist || []).push([kind, amt]); casClick(1500); refresh();
   },
   rouUndo() { const u = casU(), h = u.hist || [], x = h.pop(); if (!x || u.busy) return; u.rb[x[0]] -= x[1]; if (u.rb[x[0]] <= 0) delete u.rb[x[0]]; casClick(800); refresh(); },
