@@ -444,3 +444,16 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 .htcase.broken{animation:htshake .25s}.htcase.broken .htflash{animation:htalarm .6s infinite;background:rgba(255,40,60,.4)}
 @keyframes htshake{25%{transform:translate(-5px,3px)}75%{transform:translate(5px,-3px)}}@keyframes htalarm{0%,100%{opacity:0}50%{opacity:1}}
 .htfuse{width:min(70vw,260px);height:8px;border-radius:4px;background:rgba(255,255,255,.15);overflow:hidden}.htfuse i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ff3b4e,#ffb36b)}
+
+/* phone scam mini game */
+.scx{background:radial-gradient(ellipse at 50% 20%,#123a3a 0%,#091a22 60%,#040b10 100%)}
+.scx .brstage{width:min(94vw,420px);gap:8px;max-height:100%}
+.scid{display:flex;gap:12px;align-items:center;align-self:flex-start}.scid b{display:block;font-size:18px}.scid small{opacity:.7}.scav,.scring{font-size:40px;width:60px;height:60px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.1);border:2px solid #6ee6a0}
+.scring{width:110px;height:110px;font-size:62px;animation:scring .5s infinite alternate}@keyframes scring{from{transform:rotate(-8deg) scale(1)}to{transform:rotate(8deg) scale(1.08)}}
+.scbio{align-self:flex-start;font-size:13px;opacity:.85;text-align:left}
+.scbars{width:100%;text-align:left;font-size:12px}.scbars label{display:block;margin:4px 0 2px;opacity:.85}.scbar{height:12px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden}.scbar i{display:block;height:100%;width:0;transition:width .5s}.scbar i.c{background:linear-gradient(90deg,#3dd68c,#b6f56e)}.scbar i.s{background:linear-gradient(90deg,#ffb36b,#ff3b4e)}
+.scchat{width:100%;height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:6px;border-radius:12px;background:rgba(0,0,0,.25)}
+.scb{max-width:82%;padding:8px 11px;border-radius:14px;font-size:14px;line-height:1.35;text-align:left;animation:scpop .25s}.scb.mark{align-self:flex-start;background:#2b3f66}.scb.me{align-self:flex-end;background:#1f7a55}.scb.note{align-self:center;background:transparent;opacity:.7;font-size:12px;font-style:italic}
+@keyframes scpop{from{transform:scale(.85);opacity:0}}
+.scturn{font-size:12px;opacity:.7}.scopts{width:100%;display:flex;flex-direction:column;gap:7px;min-height:150px}
+.scopt{width:100%;text-align:left;padding:9px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.07);color:#fff;cursor:pointer}.scopt:hover{background:rgba(255,255,255,.15)}.scopt b{display:block;font-size:13px;color:#ffd45e;margin-bottom:2px}.scopt span{font-size:14px}

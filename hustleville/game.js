@@ -866,6 +866,7 @@ const A = {
       save(); refresh(); renderFeed();
     };
     if (id === 'heist' && typeof openHeist === 'function') return openHeist((ok) => done(ok === null ? chance(caught) : !ok, ok === true));
+    if (id === 'scam' && typeof openScam === 'function') return openScam((ok) => done(ok === null ? chance(caught) : !ok, ok === true));
     done(chance(caught), false);
   },
   fun(id) {
