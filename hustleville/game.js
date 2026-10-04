@@ -128,7 +128,7 @@ const ACTS = {
   rent: { icon: '🏷️', t: a => a.rented ? 'Stop renting out' : 'Rent it out', toggle: true, cost: () => 0, run(a) {
     a.rented = !a.rented; const r = Math.round(a.price * RENT[a.cat]);
     return a.rented ? `Your ${a.n} is now rented out for about ${fmt(r)} a year${a.cat === 'home' ? '. You will pay rent yourself unless you own another home' : ''}.` : `You took your ${a.n} off the rental market.`; } },
-  drive3d: { icon: '🕹️', t: 'Drive in 3D', toggle: true, cost: () => 0, run(a) { Drive.open(a); return null; } },
+  drive3d: { icon: '🕹️', t: 'Open-world drive', toggle: true, cost: () => 0, run(a) { Drive.open(a); return null; } },
   service: { icon: '🔧', t: a => ({ car: 'Service', boat: 'Refit', plane: 'Overhaul' }[a.cat] || 'Maintain'), cost: a => a.price * ({ plane: 0.04, boat: 0.035 }[a.cat] || 0.03), run(a) { a.cond = Math.min(100, cond(a) + 30); return `Your ${a.n} is in great shape again.`; } },
   roadtrip: { icon: '🛣️', t: 'Road trip', cost: a => 100 + a.price * 0.004, run(a) {
     S.happy = clamp(S.happy + 5); S.trips++; a.cond = Math.max(0, cond(a) - 3);
@@ -746,7 +746,7 @@ const A = {
       S.assets.push({ cat: UI.cat, n: it.n, icon: it.icon, price: it.price, up: it.up, dep: it.dep, value: it.price, cond: 100, used: {}, age: 0, bond: 50 });
       S.happy = clamp(S.happy + it.happy); S.fame += it.fame || 0; S.looks = clamp(S.looks + (it.looks || 0));
       say(it.icon, `You bought a ${it.n} for ${fmt(it.price)}.`, 'gold'); toast(`Bought ${it.n}. Find it in My stuff.`);
-      if (it.n === 'Lamborghini') { const car = S.assets[S.assets.length - 1]; showModal({ icon: '🏎️', title: 'Your Lamborghini!', text: 'It is yellow, loud and yours. Take it for a spin through the city?', buttons: [{ t: '🕹️ Drive in 3D', cls: 'gold', fn: () => setTimeout(() => Drive.open(car), 150) }, { t: 'Later' }] }); }
+      if (it.n === 'Lamborghini') { const car = S.assets[S.assets.length - 1]; showModal({ icon: '🏎️', title: 'Your Lamborghini!', text: 'It is yellow, loud and yours. Take it for a spin in the open-world city?', buttons: [{ t: '🕹️ Drive in 3D', cls: 'gold', fn: () => setTimeout(() => Drive.open(car), 150) }, { t: 'Later' }] }); }
     }
     checkAch(); save(); refresh(); renderFeed();
   },
@@ -823,13 +823,13 @@ const A = {
 
 Object.assign(A, SA, HA);
 
-// Called by drive.js when the 3D drive ends
+// Called by drive.js when the open-world drive ends: a short joy-ride summary, no score.
 window.driveFinished = function (a, r) {
-  const prize = r.coins * 250;
-  S.cash += prize; S.happy = clamp(S.happy + Math.min(10, 2 + Math.floor(r.coins / 4))); S.fame += r.coins >= 15 ? 0.5 : 0.1;
-  if (a && r.crashes) a.cond = Math.max(0, cond(a) - r.crashes * 3);
-  say('🏎️', `You drove your ${a ? a.n : 'car'} through the city: ${r.coins} coins (${fmt(prize)}), ${r.crashes} crash${r.crashes === 1 ? '' : 'es'}.`, prize ? 'gold' : '');
-  toast(prize ? `Prize money: ${fmt(prize)}` : 'Back from the drive.'); S.done.item = true; save(); refresh(); renderFeed();
+  const km = (r.dist || 0) / 1000, mins = Math.max(1, Math.round((r.time || 0) / 60));
+  S.happy = clamp(S.happy + (r.time > 20 ? 3 : 1));
+  if (a && r.crashes) a.cond = Math.max(0, cond(a) - r.crashes * 2);
+  say('🏎️', `You took your ${a ? a.n : 'car'} for a ${mins}-minute spin: ${km.toFixed(1)} km, top speed ${r.top || 0} km/h${r.crashes ? `, ${r.crashes} bump${r.crashes === 1 ? '' : 's'}` : ', not a scratch'}.`);
+  toast('Back from the drive.'); S.done.item = true; save(); refresh(); renderFeed();
 };
 
 /* ---------- immersive contract signing ---------- */

@@ -19,7 +19,7 @@ Posting is a lottery: most posts do little, some go viral, a few break out, and 
 - `data.js`: countries, jobs, contract trap clauses, assets, crimes, activities
 - `hubs.js`: the three business hubs and their roleplays
 - `social.js`: social media, deals, celebrity chapter
-- `drive.js`: 3D city drive in the yellow Lamborghini (Three.js, `assets/vendor/three.min.js`, loaded on first use)
+- `drive.js`: open-world 3D city in the yellow Lamborghini — free roam, drift, nitro, 4 cameras, night/sunset/day (Three.js, `assets/vendor/three.min.js`, loaded on first use)
 - `game.js`: state, age-up engine, panels, contract-signing desk
 - `styles.css`, `index.html`: UI
 - `assets/`: logo, wordmark, Runway art. `design/mockups/`: Runway layout references
