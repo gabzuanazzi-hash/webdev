@@ -67,11 +67,11 @@ const AVATARS = [
   { k: 'fade', n: 'Marcus', who: 'Man', src: 'assets/avatars/fade.webp' }
 ];
 const avatarOf = () => AVATARS.find(a => a.k === (S && S.avatar)) || AVATARS[0];
-function avatarImg(av, idx, B) {                       // idx = life stage 0..7 (baby..ghost), 4x2 atlas of 192px cells
-  return `<span class="art av" style="width:${B}px;height:${B}px;border-radius:50%;background-image:url(${av.src});background-size:${B * 4}px ${B * 2}px;background-position:${-(idx % 4) * B}px ${-Math.floor(idx / 4) * B}px"></span>`;
+function avatarImg(av, idx, B) {                       // idx = life stage 0..7 (baby..ghost), 4x2 atlas of 192px cells; drawn at 80% so the figure sits centred with a margin
+  const k = 0.8, c = B * k, o = (B - c) / 2, oy = o + B * 0.03;
+  return `<span class="art av" style="width:${B}px;height:${B}px;border-radius:50%;background-image:url(${av.src});background-size:${c * 4}px ${c * 2}px;background-position:${o - (idx % 4) * c}px ${oy - Math.floor(idx / 4) * c}px"></span>`;
 }
 // Avatar crop: zoom into the head and shoulders so the face fills the circle.
-function avatarArt0(idx, B) { const f = avatarArt; const old = S.avatar; S.avatar = 'classic'; const r = f(idx, B, stageIcon()); S.avatar = old; return r; }
 function avatarArt(idx, B, fb) {
   const av = avatarOf(); if (av.src) return avatarImg(av, idx, B);
   const a = ART.stages;
@@ -303,7 +303,7 @@ function checkAch() {
 
 /* ---------- save / load ---------- */
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
-function load() { try { const r = localStorage.getItem(SAVE_KEY); if (r) { S = JSON.parse(r); if (S.carSpend == null) S.carSpend = (S.assets || []).filter(a => a.cat === 'car').reduce((s, a) => s + (a.price || 0), 0); S.xp = S.xp || 0; S.hobbies = S.hobbies || 0; S.trips = S.trips || 0; S.goals = S.goals || []; S.social = S.social || socialInit(); S.payments = S.payments || []; return true; } } catch (e) { /* ignore */ } return false; }
+function load() { try { const r = localStorage.getItem(SAVE_KEY); if (r) { S = JSON.parse(r); if (!S.avatar || !AVATARS.some(v => v.k === S.avatar && v.src)) S.avatar = pick(AVATARS.slice(1)).k; if (S.carSpend == null) S.carSpend = (S.assets || []).filter(a => a.cat === 'car').reduce((s, a) => s + (a.price || 0), 0); S.xp = S.xp || 0; S.hobbies = S.hobbies || 0; S.trips = S.trips || 0; S.goals = S.goals || []; S.social = S.social || socialInit(); S.payments = S.payments || []; return true; } } catch (e) { /* ignore */ } return false; }
 
 /* ---------- modals ---------- */
 function showModal(m) {
@@ -745,7 +745,6 @@ function statusHTML() {
     <h5>Milestones ${S.ach.length}/${ACH.length}</h5>
     <div class="trophies">${ACH.map(a => { const u = S.ach.includes(a.id); return `<div class="trophy ${u ? '' : 'lockd'}"><span style="background-image:url(assets/runway/ui/${u ? 'trophy' : 'trophy-lock'}.png)">${u ? '🏆' : '🔒'}</span>${a.t.split(' — ')[0]}</div>`; }).join('')}</div>
     <h5>Stats</h5>${bar('👑 Fame', S.fame, 'y')}${bar('⚡ Power', power, 'b')}${bar('😊 Happy', S.happy, 'g')}${bar('🧠 Smarts', S.smarts, 'b')}${bar('✨ Looks', S.looks, 'y')}${bar('❤️ Health', S.health, 'r')}
-    <h5>Your look</h5><div class="avpick">${AVATARS.map(v => `<button class="${avatarOf().k === v.k ? 'on' : ''}" data-a="setAvatar" data-v="${v.k}">${v.src ? avatarImg(v, Math.min(stageIdx(), 7), 54) : avatarArt0(stageIdx(), 54)}<small>${v.n}</small></button>`).join('')}</div>
     <h5>Life</h5><button class="btn sm bad" data-a="restart">Start a new life</button>`;
 }
 
@@ -871,7 +870,6 @@ const A = {
     if (n) say('🎯', `You claimed ${n} goal reward${n > 1 ? 's' : ''}.`, 'gold');
     save(); refresh(); renderFeed();
   },
-  setAvatar(k) { if (!AVATARS.some(v => v.k === k)) return; S.avatar = k; save(); refresh(); },
   restart() { showModal({ icon: '⚠️', title: 'Start over?', text: 'This ends your current life and starts a new one.', buttons: [{ t: 'New life', cls: 'bad', fn: () => { newLife(); closePanel(); renderFeed(); refresh(); } }, { t: 'Cancel' }] }); }
 };
 

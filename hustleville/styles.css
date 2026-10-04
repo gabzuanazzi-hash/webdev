@@ -47,7 +47,7 @@ body { font-family: Fredoka, system-ui, sans-serif; background: #050d18; color: 
 .pills { display: flex; align-items: center; gap: 6px; }
 .gear { background: #0a1730; border: 2px solid var(--line); color: var(--ink); width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: .95rem; }
 .profile { display: flex; align-items: center; gap: 10px; margin: 8px 12px 4px; padding: 6px 12px 6px 6px; background: var(--navy-3); border: 2px solid var(--line); border-radius: 999px; }
-.avatar { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 1.7rem; background: var(--teal); border: 3px solid var(--gold); overflow: hidden; flex: none; }
+.avatar { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 1.7rem; background: transparent; border: 3px solid var(--gold); overflow: hidden; flex: none; }
 .avatar .art { border-radius: 0; }
 .who { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
 .who strong { font: 1.05rem var(--title); } .who span { font-size: .72rem; color: var(--mint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -324,7 +324,7 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 .ctags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; } .ctags i { font-style: normal; font-size: .62rem; font-weight: 600; background: #ffd40022; color: var(--gold); border: 1px solid #ffd40055; border-radius: 999px; padding: 1px 8px; }
 .carcard .btns { padding: 8px 12px 12px; }
 .avpick { display: flex; gap: 8px; flex-wrap: wrap; } .avpick button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; width: 68px; border-radius: 14px; border: 2px solid var(--line); background: #0a1730; color: var(--ink); cursor: pointer; font: inherit; } .avpick button.on { border-color: var(--gold); background: #1d3a6c; } .avpick small { font-size: .62rem; } .avpick .art { background-color: #1d7a86; }
-.art.av { background-repeat: no-repeat; background-color: var(--teal); }
+.art.av { background-repeat: no-repeat; background-color: transparent; }
 
 .brand { display: inline-block; font: .55rem var(--title); letter-spacing: .08em; text-transform: uppercase; padding: 1px 7px; border-radius: 6px; background: #ffffff1c; color: #fff; } .brand.t1 { background: #2aa5ff44; color: #9fdcff; } .brand.t2 { background: #c26bff44; color: #e2b4ff; } .brand.t3 { background: linear-gradient(90deg, #ffd400, #ff8a1a); color: #3a2000; }
 .carcard .cinfo > .brand { display: block; width: max-content; margin-bottom: 3px; }
