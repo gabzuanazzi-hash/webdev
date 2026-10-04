@@ -639,8 +639,15 @@ function buyBlock(it, i) {
 function assetsHTML() {
   const cat = ASSETS[UI.cat];
   let h = '<div class="chips scroll">' + Object.keys(ASSETS).map(k => `<button class="${UI.cat === k ? 'on' : ''}" data-a="cat" data-v="${k}">${ASSETS[k].icon}<small>${ASSETS[k].label}</small></button>`).join('') + '</div>';
+  const BRANDS = ['Scarlatti', 'Bellucci', 'Zeffiro', 'Kronvik'], BRAND_BLURB = { Scarlatti: '🇮🇹 Red-blooded Italian V8 & V12 legends', Bellucci: '🇫🇷 Horseshoe-grille ultra-luxury hypercars', Zeffiro: '🇮🇹 Hand-built carbon-fibre art pieces', Kronvik: '🇸🇪 Wing-heavy Scandinavian speed machines' };
+  const order = UI.cat === 'car' ? cat.items.map((it, i) => ({ it, i })).sort((x, y) => (BRANDS.indexOf(x.it.brand) + 1) - (BRANDS.indexOf(y.it.brand) + 1) || x.it.tier - y.it.tier || x.i - y.i) : cat.items.map((it, i) => ({ it, i }));
+  let lastBrand = null;
   h += `<div class="agrid">`;
-  cat.items.forEach((it, i) => {
+  order.forEach(({ it, i }) => {
+    if (UI.cat === 'car' && (it.brand || '') !== lastBrand) {
+      lastBrand = it.brand || '';
+      h += `</div><div class="brandhead ${lastBrand ? '' : 'plain'}"><b>${lastBrand || '🚗 Everyday & classic'}</b>${lastBrand ? `<small>${BRAND_BLURB[lastBrand]}</small>` : ''}</div><div class="agrid">`;
+    }
     const acts = it.acts || cat.acts || [];
     h += `<div class="acard"><span class="ai">${itemArt(UI.cat, it, 64)}</span><b>${it.n}</b>
       <small>${UI.cat === 'exp' ? 'One-time experience' : it.up ? 'upkeep ' + fmt(it.price * it.up) + '/yr' : 'no upkeep'}${it.looks ? ' · +' + it.looks + ' looks' : ''}</small>
@@ -650,11 +657,12 @@ function assetsHTML() {
   });
   return h + '</div>';
 }
+const brandRank = (a) => { const it = findItem(a.cat, a.n); return it && it.brand ? ['Scarlatti', 'Bellucci', 'Zeffiro', 'Kronvik'].indexOf(it.brand) + 1 : 0; };
 function stuffHTML() {
   if (!S.assets.length) return '<div class="note">You do not own anything yet. Buy something in the Shop, then come back here to use it, upgrade it, rent it out or sell it.</div>';
   let h = '', last = null;
   const order = Object.keys(ASSETS);
-  S.assets.map((a, i) => ({ a, i })).sort((x, y) => order.indexOf(x.a.cat) - order.indexOf(y.a.cat)).forEach(({ a, i }) => {
+  S.assets.map((a, i) => ({ a, i })).sort((x, y) => order.indexOf(x.a.cat) - order.indexOf(y.a.cat) || brandRank(x.a) - brandRank(y.a)).forEach(({ a, i }) => {
     if (a.cat !== last) { h += `<h5>${ASSETS[a.cat].icon} ${ASSETS[a.cat].label}</h5>`; last = a.cat; }
     const it = findItem(a.cat, a.n) || {}, c = cond(a), used = a.used || {};
     const btns = itemActs(a).map(id => {

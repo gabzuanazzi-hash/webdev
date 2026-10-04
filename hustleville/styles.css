@@ -329,3 +329,6 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 .brand { display: inline-block; font: .55rem var(--title); letter-spacing: .08em; text-transform: uppercase; padding: 1px 7px; border-radius: 6px; background: #ffffff1c; color: #fff; } .brand.t1 { background: #2aa5ff44; color: #9fdcff; } .brand.t2 { background: #c26bff44; color: #e2b4ff; } .brand.t3 { background: linear-gradient(90deg, #ffd400, #ff8a1a); color: #3a2000; }
 .carcard .cinfo > .brand { display: block; width: max-content; margin-bottom: 3px; }
 .lockmsg { color: #ffb4a8; font-size: .6rem; line-height: 1.25; font-weight: 600; }
+
+.brandhead { grid-column: 1 / -1; margin: 14px 0 6px; padding: 8px 12px; border-radius: 12px; background: linear-gradient(90deg, #ffd40033, #ffd40000); border-left: 4px solid var(--gold); display: flex; flex-direction: column; } .brandhead b { font: 1.1rem var(--title); color: var(--gold); letter-spacing: .06em; text-transform: uppercase; } .brandhead small { font-size: .68rem; opacity: .8; } .brandhead.plain { border-left-color: #35d4c4; background: linear-gradient(90deg, #35d4c433, #0000); } .brandhead.plain b { color: #7fe8dc; }
+.agrid + .brandhead, .brandhead + .agrid { }

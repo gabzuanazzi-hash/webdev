@@ -235,7 +235,12 @@ const Garage = (() => {
     if (anim) { box.classList.remove('swap'); void box.offsetWidth; box.classList.add('swap'); const f = $g('garFlash'); f.className = 'gar-flash'; void f.offsetWidth; f.className = 'gar-flash go'; }
   }
   const tile = (inner, on, data, extra) => `<button class="gt ${on ? 'on' : ''} ${extra || ''}" ${data}>${inner}</button>`;
+  const thumbCache = {};
   function thumb(m, crop) {
+    const tk = G.key + JSON.stringify(norm(m)) + (crop ? 'c' : ''); if (thumbCache[tk]) return thumbCache[tk];
+    return (thumbCache[tk] = thumbRaw(m, crop));
+  }
+  function thumbRaw(m, crop) {
     const c = compose(G.key, m, { glow: 0.7 }); if (!c) return '';
     let out = c; if (crop) { const k = document.createElement('canvas'), w = c.width, h = c.height, sx = w * 0.5, sy = h * 0.3, sw = w * 0.5, sh = h * 0.6; k.width = 220; k.height = Math.round(220 * sh / sw); k.getContext('2d').drawImage(c, sx, sy, sw, sh, 0, 0, k.width, k.height); out = k; }
     else { const k = document.createElement('canvas'); k.width = 190; k.height = Math.round(190 * c.height / c.width); k.getContext('2d').drawImage(c, 0, 0, k.width, k.height); out = k; }
