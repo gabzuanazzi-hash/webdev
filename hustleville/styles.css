@@ -465,3 +465,10 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 .wdslots{display:flex;flex-wrap:wrap;gap:5px}.wdslot{padding:4px 9px;border-radius:99px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;font-size:11px;cursor:pointer}.wdslot span{opacity:.6;margin-right:4px}
 .wdcard .wdthumb{display:block;width:84px;height:84px;margin:0 auto 4px;background:center/contain no-repeat;border-radius:10px;background-color:rgba(255,255,255,.06)}
 .wdside{float:right;margin:-6px -2px 0 8px}
+
+/* my stuff hub */
+.stuffgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
+.stuffsq{position:relative;aspect-ratio:1.15;border-radius:16px;border:2px solid rgba(255,255,255,.18);background:linear-gradient(160deg,#1d3a70,#12244d);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;padding:8px}
+.stuffsq:hover{border-color:#f5c542}.stuffsq .se{font-size:38px}.stuffsq b{font-size:16px}.stuffsq small{opacity:.7;font-size:11px;text-align:center}
+.stuffsq em{position:absolute;right:10px;top:8px;font-style:normal;font-weight:700;background:#f5c542;color:#222;border-radius:99px;min-width:22px;padding:1px 7px;font-size:12px}
+.stuffback{margin:4px 0}

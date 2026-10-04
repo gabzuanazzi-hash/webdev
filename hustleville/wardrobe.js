@@ -43,13 +43,21 @@ function wdWear(id) {
 }
 function wdStyle() { const w = wdState().worn; return Object.values(w).reduce((s, id) => s + (WD_ITEM[id] ? WD_ITEM[id].looks : 0), 0); }
 
-function fashionHTML() {
-  if (S.age < 4) return '<div class="note">Clothes shopping unlocks at age 4. For now you wear whatever mum picks.</div>';
-  const st = wdState(), g = wdGender(), av = avatarOf(), worn = st.worn;
-  const slots = ['head', 'face', 'top', 'dress', 'bottom', 'shoes'];
-  let h = `<div class="wdroom"><div class="wdstage">${wdFigure(150)}</div><div class="wdinfo"><b>${S.name}'s fitting room</b><small>Style score <b>${wdStyle()}</b> · tap an item you own to wear it</small>
+function wdRoomHTML() {
+  const st = wdState(), av = avatarOf(), worn = st.worn, slots = ['head', 'face', 'top', 'dress', 'bottom', 'shoes'];
+  return `<div class="wdroom"><div class="wdstage">${wdFigure(150)}</div><div class="wdinfo"><b>${S.name}'s fitting room</b><small>Style score <b>${wdStyle()}</b> · tap an item you own to wear it</small>
     <div class="wdslots">${slots.map(s => worn[s] ? `<button class="wdslot on" data-a="wdOff" data-v="${s}"><span>${WD_SLOT_NAME[s]}</span>${WD_ITEM[worn[s]].n} ✕</button>` : '').join('') || '<small>Wearing the basics. Shop below!</small>'}</div>
     ${Object.keys(worn).length ? '<button class="mini" data-a="wdStrip">👕 Back to basics</button>' : ''}</div></div>`;
+}
+function wardrobeHTML() {                                              // My stuff > Wardrobe: fitting room + everything bought, wear / take off
+  const st = wdState(), g = wdGender(), worn = st.worn, owned = Object.keys(st.own).map(id => WD_ITEM[id]).filter(i => i && i.g === g);
+  return wdRoomHTML() + (owned.length ? `<h5>Owned (${owned.length})</h5><div class="agrid">${owned.map(i => { const on = worn[i.slot] === i.id;
+    return `<div class="acard wdcard"><span class="wdthumb" style="background-image:url(assets/wardrobe/t-${i.id}.webp)"></span><b>${i.n}</b><small>${WD_SLOT_NAME[i.slot]}</small><button class="gbtn sm" data-a="${on ? 'wdOff' : 'wdOn'}" data-v="${on ? i.slot : i.id}">${on ? 'TAKE OFF' : 'WEAR'}</button></div>`; }).join('')}</div>` : '<div class="note">Nothing in your wardrobe yet — visit the Fashion tab.</div>');
+}
+function fashionHTML() {
+  if (S.age < 4) return '<div class="note">Clothes shopping unlocks at age 4. For now you wear whatever mum picks.</div>';
+  const st = wdState(), g = wdGender(), worn = st.worn;
+  let h = wdRoomHTML();
   WARDROBE.forEach(b => {
     const items = b.items.filter(i => i.g === g), shut = !!(UI.shut && UI.shut['cl_' + b.id]);
     h += `<button class="brandhead ${shut ? 'shut' : ''}" data-a="toggleGrp" data-v="cl_${b.id}"><span class="bh"><b>${b.e} ${b.n}</b><small>${b.blurb}</small></span><em>${items.length}</em><i class="chev">▾</i></button>

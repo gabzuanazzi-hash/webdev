@@ -549,7 +549,7 @@ function renderPanel() {
   const money = hubOpen ? (UI.src ? 'Sourcing' : HUBS[S.biz[UI.hub].id].name) : { jobs: 'Careers', biz: 'Business Empire', invest: 'Invest' }[UI.sub.money];
   const T = { money: [money, moneyHTML], social: ['Social Media', socialHTML], love: ['Love & Family', loveHTML], shop: ['Asset Shop', shopHTML], crazy: ['Activities', crazyHTML], status: ['Life & Goals', statusHTML] }[UI.panel];
   $('sheetTitle').textContent = T[0];
-  const view = [UI.panel, UI.sub.money, UI.sub.social, UI.sub.crazy, UI.hub, UI.src ? (UI.src.sel ? 's2' : 's1') : 0, UI.startOpen, UI.sub.shop, UI.cat].join('|');
+  const view = [UI.panel, UI.sub.money, UI.sub.social, UI.sub.crazy, UI.hub, UI.src ? (UI.src.sel ? 's2' : 's1') : 0, UI.startOpen, UI.sub.shop, UI.cat, UI.stuff].join('|');
   const y = view === renderPanel.last ? $('sheetBody').scrollTop : 0;
   renderPanel.last = view;
   $('sheetBody').innerHTML = locked() + T[1]();
@@ -564,9 +564,14 @@ function moneyHTML() {
   const sub = UI.sub.money;
   return ribbonHTML() + tabs('money', [['jobs', '💼 Jobs'], ['biz', '🏢 Business'], ['invest', '📊 Invest']]) + ({ jobs: jobsHTML, biz: bizHTML, invest: investHTML }[sub])();
 }
+function petsHTML() {
+  const mine = stuffList(c => c === 'pet');
+  return (mine ? '<h5>🐾 Your pets</h5>' + mine : '<div class="note">No pets yet. Adopt a friend below!</div>') + '<h5>Adopt a pet</h5>' + assetsHTML('pet');
+}
 function shopHTML() {
   const sub = UI.sub.shop || 'shop';
-  return ribbonHTML() + tabs('shop', [['shop', '🛍️ Shop'], ['fashion', '👗 Fashion'], ['mine', `🎒 My stuff (${S.assets.length})`]]) + (sub === 'mine' ? stuffHTML() : sub === 'fashion' ? fashionHTML() : assetsHTML());
+  if (sub !== 'pets' && (UI.cat === 'pet' || UI.cat === 'clothes')) UI.cat = 'home';
+  return ribbonHTML() + tabs('shop', [['shop', '🛍️ Shop'], ['fashion', '👗 Fashion'], ['pets', '🐾 Pets'], ['mine', `🎒 My stuff (${S.assets.filter(a => a.cat !== 'pet').length})`]]) + (sub === 'mine' ? stuffHTML() : sub === 'fashion' ? fashionHTML() : sub === 'pets' ? petsHTML() : assetsHTML());
 }
 
 function jobsHTML() {
@@ -641,9 +646,10 @@ function buyBlock(it, i) {
   if (why) return `<small class="lockmsg">🔒 ${why}</small><button class="gbtn sm" disabled>${fmt(it.price)}</button>`;
   return `<button class="gbtn sm" ${S.cash >= it.price && !S.jail ? '' : 'disabled'} data-a="buy" data-v="${i}">${fmt(it.price)}</button>`;
 }
-function assetsHTML() {
+function assetsHTML(forceCat) {
+  if (forceCat) UI.cat = forceCat;
   const cat = ASSETS[UI.cat];
-  let h = '<div class="chips scroll">' + Object.keys(ASSETS).map(k => `<button class="${UI.cat === k ? 'on' : ''}" data-a="cat" data-v="${k}">${ASSETS[k].icon}<small>${ASSETS[k].label}</small></button>`).join('') + '</div>';
+  let h = forceCat ? '' : '<div class="chips scroll">' + Object.keys(ASSETS).filter(k => k !== 'clothes' && k !== 'pet').map(k => `<button class="${UI.cat === k ? 'on' : ''}" data-a="cat" data-v="${k}">${ASSETS[k].icon}<small>${ASSETS[k].label}</small></button>`).join('') + '</div>';
   const BRANDS = ['Scarlatti', 'Bellucci', 'Zeffiro', 'Kronvik', 'Torrente'], BRAND_BLURB = { Scarlatti: '🇮🇹 Red-blooded Italian V8 & V12 legends', Bellucci: '🇫🇷 Horseshoe-grille ultra-luxury hypercars', Zeffiro: '🇮🇹 Hand-built carbon-fibre art pieces', Kronvik: '🇸🇪 Wing-heavy Scandinavian speed machines', Torrente: '🇮🇹 Razor-edged raging-bull wedge supercars' };
   const order = UI.cat === 'car' ? cat.items.map((it, i) => ({ it, i })).sort((x, y) => (BRANDS.indexOf(x.it.brand) + 1) - (BRANDS.indexOf(y.it.brand) + 1) || x.it.tier - y.it.tier || x.i - y.i) : cat.items.map((it, i) => ({ it, i }));
   let lastBrand = null;
@@ -665,11 +671,10 @@ function assetsHTML() {
   return h + '</div>';
 }
 const brandRank = (a) => { const it = findItem(a.cat, a.n); return it && it.brand ? ['Scarlatti', 'Bellucci', 'Zeffiro', 'Kronvik', 'Torrente'].indexOf(it.brand) + 1 : 0; };
-function stuffHTML() {
-  if (!S.assets.length) return '<div class="note">You do not own anything yet. Buy something in the Shop, then come back here to use it, upgrade it, rent it out or sell it.</div>';
+function stuffList(keep) {                                 // owned items of the categories `keep` accepts, as cards
   let h = '', last = null;
   const order = Object.keys(ASSETS);
-  S.assets.map((a, i) => ({ a, i })).sort((x, y) => order.indexOf(x.a.cat) - order.indexOf(y.a.cat) || brandRank(x.a) - brandRank(y.a)).forEach(({ a, i }) => {
+  S.assets.map((a, i) => ({ a, i })).filter(({ a }) => keep(a.cat)).sort((x, y) => order.indexOf(x.a.cat) - order.indexOf(y.a.cat) || brandRank(x.a) - brandRank(y.a)).forEach(({ a, i }) => {
     if (a.cat !== last) { h += `<h5>${ASSETS[a.cat].icon} ${ASSETS[a.cat].label}</h5>`; last = a.cat; }
     const it = findItem(a.cat, a.n) || {}, c = cond(a), used = a.used || {};
     const btns = itemActs(a).map(id => {
@@ -692,6 +697,27 @@ function stuffHTML() {
       <div class="btns">${btns}<button class="mini" ${a.cat === 'pet' ? 'disabled' : ''} data-a="sellAsset" data-v="${i}">💵 Sell ${fmt(sellValue(a))}</button></div></div>`;
   });
   return h;
+}
+const STUFF_PAGES = [
+  { k: 'garage', e: '🚗', n: 'Garage', cats: ['car'], sub: 'Cars & customisation' }, { k: 'hangar', e: '✈️', n: 'Hangar', cats: ['plane'], sub: 'Aircraft' },
+  { k: 'marina', e: '⛵', n: 'Marina', cats: ['boat'], sub: 'Boats & yachts' }, { k: 'wardrobe', e: '👗', n: 'Wardrobe', cats: ['clothes'], sub: 'Clothes & fitting room' },
+  { k: 'assets', e: '💎', n: 'Assets', cats: ['art', 'jewel', 'watch'], sub: 'Art, jewelry & watches' }
+];
+const stuffCats = (p) => p.k === 'others' ? (c) => !STUFF_PAGES.some(x => x.cats.includes(c)) && c !== 'pet' : (c) => p.cats.includes(c);
+const OTHERS_PAGE = { k: 'others', e: '📦', n: 'Others', sub: 'Homes, tech, gear & more' };
+function stuffHTML() {
+  const pages = [...STUFF_PAGES, OTHERS_PAGE], cur = pages.find(p => p.k === UI.stuff);
+  if (!cur) {
+    return '<div class="stuffgrid">' + pages.map(p => {
+      const n = p.k === 'wardrobe' ? Object.keys(wdState().own).length + S.assets.filter(a => a.cat === 'clothes').length : S.assets.filter(a => stuffCats(p)(a.cat)).length;
+      return `<button class="stuffsq" data-a="stuffOpen" data-v="${p.k}"><span class="se">${p.e}</span><b>${p.n}</b><small>${p.sub}</small><em>${n}</em></button>`;
+    }).join('') + '</div>';
+  }
+  const back = `<button class="mini stuffback" data-a="stuffOpen" data-v="">‹ My stuff</button><h5>${cur.e} ${cur.n}</h5>`;
+  const list = stuffList(stuffCats(cur));
+  const empty = `<div class="note">Nothing here yet. Buy something in the Shop and it will show up in your ${cur.n.toLowerCase()}.</div>`;
+  if (cur.k === 'wardrobe') return back + wardrobeHTML() + (list || '');
+  return back + (list || empty);
 }
 
 function investHTML() {
@@ -886,6 +912,7 @@ const A = {
     if (n) say('🎯', `You claimed ${n} goal reward${n > 1 ? 's' : ''}.`, 'gold');
     save(); refresh(); renderFeed();
   },
+  stuffOpen(v) { UI.stuff = v || null; refresh(); },
   toggleGrp(k) { UI.shut = UI.shut || {}; UI.shut[k] = !UI.shut[k]; refresh(); },
   restart() { showModal({ icon: '⚠️', title: 'Start over?', text: 'This ends your current life and starts a new one.', buttons: [{ t: 'New life', cls: 'bad', fn: () => { newLife(); closePanel(); renderFeed(); refresh(); } }, { t: 'Cancel' }] }); }
 };
