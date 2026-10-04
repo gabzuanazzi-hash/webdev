@@ -51,12 +51,20 @@ const Garage = (() => {
     if (!wrapsP) wrapsP = Promise.all([fetchImg(DIR + 'wheels.webp').then(im => { WHL = im; }).catch(() => {})].concat(WRAPS.map(async (w, i) => { if (!w.f) return; try { WR[i] = { img: await fetchImg(DIR + w.f), cache: {} }; } catch (e) { /* missing wrap art: skipped */ } })));
     return wrapsP;
   }
-  function wrapMask(v) {                                            // cleaned wrap area: body mask, eroded off the outline, minus dark trim / glass
-    if (v.wm) return v.wm; const w = v.w, h = v.h, n = w * h, a = new Uint8Array(n), t = new Uint8Array(n), o = new Uint8Array(n), R = 3;
-    for (let i = 0; i < n; i++) { const k = i * 4, g = v.pm[k + 1]; if (!g) continue; const lum = 0.3 * v.px[k] + 0.59 * v.px[k + 1] + 0.11 * v.px[k + 2], sh = v.pm[k]; a[i] = (lum < 38 || sh < 34) ? 0 : g; }
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let m = 255; for (let d = -R; d <= R && m; d++) { const xx = x + d; if (xx < 0 || xx >= w) { m = 0; break; } const q = a[y * w + xx]; if (q < m) m = q; } t[y * w + x] = m; }
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let m = t[y * w + x]; for (let d = -R; d <= R && m; d++) { const yy = y + d; if (yy < 0 || yy >= h) { m = 0; break; } const q = t[yy * w + x]; if (q < m) m = q; } o[y * w + x] = m; }
-    return (v.wm = o);
+  function wrapMask(v) {                                            // wrap area: body mask minus big dark regions (glass, trim), eased off the outline
+    if (v.wm) return v.wm; const w = v.w, h = v.h, n = w * h;
+    const sep = (src, R, mx) => { const t = new Uint8Array(n), o = new Uint8Array(n), e = mx ? 0 : 255;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let m = e; for (let d = -R; d <= R; d++) { const xx = x + d, q = xx < 0 || xx >= w ? e : src[y * w + xx]; if (mx ? q > m : q < m) m = q; } t[y * w + x] = m; }
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let m = e; for (let d = -R; d <= R; d++) { const yy = y + d, q = yy < 0 || yy >= h ? e : t[yy * w + x]; if (mx ? q > m : q < m) m = q; } o[y * w + x] = m; } return o; };
+    const body = new Uint8Array(n), dark = new Uint8Array(n);
+    for (let i = 0; i < n; i++) { const k = i * 4; body[i] = v.pm[k + 1]; if (body[i]) { const lum = 0.3 * v.px[k] + 0.59 * v.px[k + 1] + 0.11 * v.px[k + 2]; if (lum < 42 || v.pm[k] < 36) dark[i] = 255; } }
+    const big = sep(sep(dark, 3, false), 4, true);                 // opening: thin seams and panel gaps vanish, glass and trim stay
+    const inner = sep(body, 2, false), o = new Uint8Array(n);
+    for (let i = 0; i < n; i++) o[i] = big[i] ? 0 : inner[i];
+    const bl = new Uint8Array(n), t = new Uint8Array(n);           // soft 5px edge, no hard stencil cut
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let s = 0; for (let d = -2; d <= 2; d++) { const xx = Math.min(w - 1, Math.max(0, x + d)); s += o[y * w + xx]; } t[y * w + x] = s / 5; }
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let s = 0; for (let d = -2; d <= 2; d++) { const yy = Math.min(h - 1, Math.max(0, y + d)); s += t[yy * w + x]; } bl[y * w + x] = s / 5; }
+    return (v.wm = bl);
   }
   function wrapPixels(v, i) {                                       // wrap art stretched over the body-paint area of this variant, cached
     const W = WR[i]; if (!W) return null; if (W.cache[v.id]) return W.cache[v.id];
