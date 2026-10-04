@@ -646,7 +646,8 @@ function assetsHTML() {
   order.forEach(({ it, i }) => {
     if (UI.cat === 'car' && (it.brand || '') !== lastBrand) {
       lastBrand = it.brand || '';
-      h += `</div><div class="brandhead ${lastBrand ? '' : 'plain'}"><b>${lastBrand || '🚗 Everyday & classic'}</b>${lastBrand ? `<small>${BRAND_BLURB[lastBrand]}</small>` : ''}</div><div class="agrid">`;
+      const gk = lastBrand || 'everyday', cnt = cat.items.filter(x => (x.brand || '') === lastBrand).length, shut = !!(UI.shut && UI.shut[gk]);
+      h += `</div><button class="brandhead ${lastBrand ? '' : 'plain'} ${shut ? 'shut' : ''}" data-a="toggleGrp" data-v="${gk}"><span class="bh"><b>${lastBrand || '🚗 Everyday & classic'}</b>${lastBrand ? `<small>${BRAND_BLURB[lastBrand]}</small>` : ''}</span><em>${cnt}</em><i class="chev">▾</i></button><div class="agrid ${shut ? 'hide' : ''}">`;
     }
     const acts = it.acts || cat.acts || [];
     h += `<div class="acard"><span class="ai">${itemArt(UI.cat, it, 64)}</span><b>${it.n}</b>
@@ -870,6 +871,7 @@ const A = {
     if (n) say('🎯', `You claimed ${n} goal reward${n > 1 ? 's' : ''}.`, 'gold');
     save(); refresh(); renderFeed();
   },
+  toggleGrp(k) { UI.shut = UI.shut || {}; UI.shut[k] = !UI.shut[k]; refresh(); },
   restart() { showModal({ icon: '⚠️', title: 'Start over?', text: 'This ends your current life and starts a new one.', buttons: [{ t: 'New life', cls: 'bad', fn: () => { newLife(); closePanel(); renderFeed(); refresh(); } }, { t: 'Cancel' }] }); }
 };
 
