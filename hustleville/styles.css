@@ -325,3 +325,7 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 .carcard .btns { padding: 8px 12px 12px; }
 .avpick { display: flex; gap: 8px; flex-wrap: wrap; } .avpick button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; width: 68px; border-radius: 14px; border: 2px solid var(--line); background: #0a1730; color: var(--ink); cursor: pointer; font: inherit; } .avpick button.on { border-color: var(--gold); background: #1d3a6c; } .avpick small { font-size: .62rem; } .avpick .art { background-color: #1d7a86; }
 .art.av { background-repeat: no-repeat; background-color: var(--teal); }
+
+.brand { display: inline-block; font: .55rem var(--title); letter-spacing: .08em; text-transform: uppercase; padding: 1px 7px; border-radius: 6px; background: #ffffff1c; color: #fff; } .brand.t1 { background: #2aa5ff44; color: #9fdcff; } .brand.t2 { background: #c26bff44; color: #e2b4ff; } .brand.t3 { background: linear-gradient(90deg, #ffd400, #ff8a1a); color: #3a2000; }
+.carcard .cinfo > .brand { display: block; width: max-content; margin-bottom: 3px; }
+.lockmsg { color: #ffb4a8; font-size: .6rem; line-height: 1.25; font-weight: 600; }

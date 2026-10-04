@@ -35,7 +35,8 @@ const ART = {
   extra: { src: 'assets/runway/ui/extra-items.png', cols: 5, rows: 3 },
   itA: { src: 'assets/runway/ui/items-a.jpg', cols: 5, rows: 3 },
   itB: { src: 'assets/runway/ui/items-b.jpg', cols: 5, rows: 3 },
-  itC: { src: 'assets/runway/ui/items-c.jpg', cols: 5, rows: 3 }
+  itC: { src: 'assets/runway/ui/items-c.jpg', cols: 5, rows: 3 },
+  lux: { src: 'assets/garage/lux-icons.webp', cols: 4, rows: 4 }
 };
 const BANNERS = { hubs: { src: 'assets/runway/ui/hub-banners.png', pos: [10, 50, 90] }, social: { src: 'assets/runway/ui/social-banners.png', pos: [20, 80] } };
 function bannerHTML(key, idx) { const a = BANNERS[key]; return a && a.ok ? `<div class="banner" style="background-image:url(${a.src});background-position:center ${a.pos[idx]}%"></div>` : ''; }
@@ -106,7 +107,7 @@ function newLife() {
     cash: 0, happy: ri(65, 95), health: ri(70, 100), smarts: ri(20, 80), looks: ri(20, 90), fame: 0,
     job: null, jobYears: 0, deg: false, college: null,
     biz: [], assets: [], invest: { savings: 0, index: 0, crypto: 0 },
-    avatar: pick(AVATARS.slice(1)).k, candidate: null, partner: null, kids: [], mom, dad,
+    avatar: pick(AVATARS.slice(1)).k, carSpend: 0, candidate: null, partner: null, kids: [], mom, dad,
     jail: 0, record: 0, heat: 0, done: {}, ach: [], market: 1, log: [], peakNW: 0, xp: 0, hobbies: 0, trips: 0, goals: [], social: socialInit(), payments: []
   };
   S.log.push({ age: 0, items: [] });
@@ -302,7 +303,7 @@ function checkAch() {
 
 /* ---------- save / load ---------- */
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
-function load() { try { const r = localStorage.getItem(SAVE_KEY); if (r) { S = JSON.parse(r); S.xp = S.xp || 0; S.hobbies = S.hobbies || 0; S.trips = S.trips || 0; S.goals = S.goals || []; S.social = S.social || socialInit(); S.payments = S.payments || []; return true; } } catch (e) { /* ignore */ } return false; }
+function load() { try { const r = localStorage.getItem(SAVE_KEY); if (r) { S = JSON.parse(r); if (S.carSpend == null) S.carSpend = (S.assets || []).filter(a => a.cat === 'car').reduce((s, a) => s + (a.price || 0), 0); S.xp = S.xp || 0; S.hobbies = S.hobbies || 0; S.trips = S.trips || 0; S.goals = S.goals || []; S.social = S.social || socialInit(); S.payments = S.payments || []; return true; } } catch (e) { /* ignore */ } return false; }
 
 /* ---------- modals ---------- */
 function showModal(m) {
@@ -624,6 +625,17 @@ function hubHTML(i) {
     <h5>Hub log</h5>${(b.log || []).length ? (b.log || []).map(m => `<div class="logline">${m}</div>`).join('') : '<div class="note">Nothing yet.</div>'}`;
 }
 
+const carSpend = () => S.carSpend || 0;
+function buyLock(it) {                                  // why this item cannot be bought right now ('' = it can)
+  if (it.req && carSpend() < it.req) return `Collector status: spend ${fmt(it.req)} on cars (you: ${fmt(carSpend())})`;
+  if (it.unique && S.assets.some(a => a.n === it.n)) return 'Yours — only one exists';
+  return '';
+}
+function buyBlock(it, i) {
+  const why = buyLock(it);
+  if (why) return `<small class="lockmsg">🔒 ${why}</small><button class="gbtn sm" disabled>${fmt(it.price)}</button>`;
+  return `<button class="gbtn sm" ${S.cash >= it.price && !S.jail ? '' : 'disabled'} data-a="buy" data-v="${i}">${fmt(it.price)}</button>`;
+}
 function assetsHTML() {
   const cat = ASSETS[UI.cat];
   let h = '<div class="chips scroll">' + Object.keys(ASSETS).map(k => `<button class="${UI.cat === k ? 'on' : ''}" data-a="cat" data-v="${k}">${ASSETS[k].icon}<small>${ASSETS[k].label}</small></button>`).join('') + '</div>';
@@ -633,7 +645,8 @@ function assetsHTML() {
     h += `<div class="acard"><span class="ai">${itemArt(UI.cat, it, 64)}</span><b>${it.n}</b>
       <small>${UI.cat === 'exp' ? 'One-time experience' : it.up ? 'upkeep ' + fmt(it.price * it.up) + '/yr' : 'no upkeep'}${it.looks ? ' · +' + it.looks + ' looks' : ''}</small>
       ${it.perk ? `<span class="perk">${it.perk}</span>` : ''}${acts.length ? `<small class="can">Can: ${acts.slice(0, 4).map(id => ACTS[id].icon + ' ' + (typeof ACTS[id].t === 'function' ? ACTS[id].t({ cat: UI.cat }) : ACTS[id].t)).join(' · ')}</small>` : ''}
-      <button class="gbtn sm" ${S.cash >= it.price && !S.jail ? '' : 'disabled'} data-a="buy" data-v="${i}">${fmt(it.price)}</button></div>`;
+      ${it.brand ? `<span class="brand t${it.tier}">${it.brand}${it.unique ? ' · 1/1 UNIQUE' : ''}</span>` : ''}
+      ${buyBlock(it, i)}</div>`;
   });
   return h + '</div>';
 }
@@ -651,7 +664,7 @@ function stuffHTML() {
     if (a.cat === 'car' && typeof Garage !== 'undefined' && Garage.keyOf(a)) {
       const mods = Garage.norm(a.mods), tags = [mods.wide ? '🏁 Widebody' : '', mods.paint ? '🎨 Custom paint' : '', mods.wrap ? '🌸 Wrap' : '', mods.wheel ? '🛞 Wheels' : '', mods.light ? '💡 Lights' : '', mods.neon ? '🌈 Neon' : ''].filter(Boolean);
       h += `<div class="card item carcard"><div class="carstage">${Garage.hero(a, () => itemArt(a.cat, it, 96))}</div>
-        <div class="cinfo"><b>${a.n}</b> ${a.rented ? '<i class="tag">Rented out</i>' : ''}
+        <div class="cinfo">${it.brand ? `<span class="brand t${it.tier}">${it.brand}${it.unique ? ' · 1/1 UNIQUE' : ''}</span>` : ''}<b>${a.n}</b> ${a.rented ? '<i class="tag">Rented out</i>' : ''}
         <div class="cstats"><span>💰 Worth <b>${fmt(a.value)}</b></span><span>🔧 Upkeep <b>${a.up ? fmt(a.price * a.up) + '/yr' : 'none'}</b></span></div>
         <div class="sb"><label>Condition</label><div class="bar"><i style="width:${c}%;background:${hcol(c)}"></i></div><b>${Math.round(c)}</b></div>
         ${tags.length ? `<div class="ctags">${tags.map(t => `<i>${t}</i>`).join('')}</div>` : ''}${it.perk ? `<span class="perk">${it.perk}</span>` : ''}</div>
@@ -764,7 +777,7 @@ const A = {
   },
   sell(i) { openSale(+i); },
   buy(i) {
-    const it = ASSETS[UI.cat].items[i]; if (!it || S.cash < it.price) return;
+    const it = ASSETS[UI.cat].items[i]; if (!it || S.cash < it.price || buyLock(it)) return;
     S.cash -= it.price;
     if (UI.cat === 'exp') {
       const e = it.e || {}; let msg = it.msg || e.msg || '';
@@ -774,6 +787,7 @@ const A = {
       if (it.risk && chance(it.risk.p)) { if (it.risk.cost) S.cash -= it.risk.cost; if (it.risk.health) S.health = clamp(S.health + it.risk.health); msg = it.risk.msg; }
       say(it.icon, `${it.n}: ${msg}`, 'gold'); toast(msg); if (S.health <= 0) die();
     } else {
+      if (UI.cat === 'car') S.carSpend = (S.carSpend || 0) + it.price;
       S.assets.push({ cat: UI.cat, n: it.n, icon: it.icon, price: it.price, up: it.up, dep: it.dep, value: it.price, cond: 100, used: {}, age: 0, bond: 50 });
       S.happy = clamp(S.happy + it.happy); S.fame += it.fame || 0; S.looks = clamp(S.looks + (it.looks || 0));
       say(it.icon, `You bought a ${it.n} for ${fmt(it.price)}.`, 'gold'); toast(`Bought ${it.n}. Find it in My stuff.`);

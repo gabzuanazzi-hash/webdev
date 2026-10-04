@@ -119,7 +119,22 @@ const ASSETS = {
     I('Classic Muscle Car', '🚓', 180000, { sh: 'itA', sp: 6, up: 0.05, dep: 0.03, vol: 0.05, happy: 6, fame: 1 }),
     I('Lamborghini', '🏎️', 420000, { up: 0.04, dep: -0.06, happy: 8, fame: 4, sp: 4, acts: ['custom', 'service', 'roadtrip', 'race'] }),
     I('Rolls-Royce', '🚘', 450000, { sh: 'itA', sp: 7, up: 0.04, dep: -0.05, happy: 8, fame: 4 }),
-    I('Bugatti Chiron', '🏁', 3400000, { up: 0.03, dep: 0, happy: 12, fame: 8, sp: 5 })
+    I('Scarlatti Stradale GT', '🏁', 3400000, { sh: 'lux', sp: 0, brand: 'Scarlatti', tier: 0, req: 0, up: 0.03, dep: 0, happy: 10, fame: 6, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Scarlatti Mirasole V12', '🏁', 14500000, { sh: 'lux', sp: 1, brand: 'Scarlatti', tier: 1, req: 40000000, up: 0.025, dep: 0.01, happy: 12, fame: 10, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Scarlatti Tempesta SF', '🏁', 58000000, { sh: 'lux', sp: 2, brand: 'Scarlatti', tier: 2, req: 150000000, up: 0.02, dep: 0.025, happy: 15, fame: 16, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Scarlatti Fenice Unica', '🏁', 165000000, { sh: 'lux', sp: 3, brand: 'Scarlatti', tier: 3, req: 400000000, unique: true, up: 0.015, dep: 0.05, vol: 0.06, happy: 20, fame: 30, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Bellucci Aurelle', '🏁', 4200000, { sh: 'lux', sp: 4, brand: 'Bellucci', tier: 0, req: 0, up: 0.03, dep: 0, happy: 10, fame: 6, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Bellucci Orion', '🏁', 17500000, { sh: 'lux', sp: 5, brand: 'Bellucci', tier: 1, req: 40000000, up: 0.025, dep: 0.01, happy: 12, fame: 10, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Bellucci Sovrano', '🏁', 72000000, { sh: 'lux', sp: 6, brand: 'Bellucci', tier: 2, req: 150000000, up: 0.02, dep: 0.025, happy: 15, fame: 16, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Bellucci Mirage Unica', '🏁', 200000000, { sh: 'lux', sp: 7, brand: 'Bellucci', tier: 3, req: 400000000, unique: true, up: 0.015, dep: 0.05, vol: 0.06, happy: 20, fame: 30, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Zeffiro Aria', '🏁', 3800000, { sh: 'lux', sp: 8, brand: 'Zeffiro', tier: 0, req: 0, up: 0.03, dep: 0, happy: 10, fame: 6, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Zeffiro Scirocco', '🏁', 13000000, { sh: 'lux', sp: 9, brand: 'Zeffiro', tier: 1, req: 40000000, up: 0.025, dep: 0.01, happy: 12, fame: 10, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Zeffiro Maestrale', '🏁', 52000000, { sh: 'lux', sp: 10, brand: 'Zeffiro', tier: 2, req: 150000000, up: 0.02, dep: 0.025, happy: 15, fame: 16, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Zeffiro Libeccio Unica', '🏁', 130000000, { sh: 'lux', sp: 11, brand: 'Zeffiro', tier: 3, req: 400000000, unique: true, up: 0.015, dep: 0.05, vol: 0.06, happy: 20, fame: 30, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Kronvik Aurora', '🏁', 4800000, { sh: 'lux', sp: 12, brand: 'Kronvik', tier: 0, req: 0, up: 0.03, dep: 0, happy: 10, fame: 6, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Kronvik Frost', '🏁', 16000000, { sh: 'lux', sp: 13, brand: 'Kronvik', tier: 1, req: 40000000, up: 0.025, dep: 0.01, happy: 12, fame: 10, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Kronvik Valkyr', '🏁', 62000000, { sh: 'lux', sp: 14, brand: 'Kronvik', tier: 2, req: 150000000, up: 0.02, dep: 0.025, happy: 15, fame: 16, acts: ['custom', 'service', 'roadtrip', 'race'] }),
+    I('Kronvik Ragnarok Unica', '🏁', 185000000, { sh: 'lux', sp: 15, brand: 'Kronvik', tier: 3, req: 400000000, unique: true, up: 0.015, dep: 0.05, vol: 0.06, happy: 20, fame: 30, acts: ['custom', 'service', 'roadtrip', 'race'] })
   ] },
   boat: { label: 'Boats', icon: '🛥️', acts: ['sail', 'party', 'service', 'rent'], items: [
     I('Jet Ski', '🚤', 15000, { sh: 'itA', sp: 8, up: 0.08, dep: -0.1, happy: 4 }),
