@@ -277,12 +277,33 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 .card.item .btns .mini { flex: 0 0 auto; font-size: .72rem; padding: 5px 9px; }
 .card.item .btns .mini:disabled { opacity: .4; }
 
-/* ---- car customization ---- */
-.carart { position: relative; display: inline-block; vertical-align: middle; } .carart .cbody { display: block; transition: transform .2s, filter .2s; } .carart .cbody.wide { transform: scaleX(1.13) scaleY(.96); }
-.carart .hl { position: absolute; left: 70%; top: 52%; width: 7%; height: 4%; border-radius: 50%; opacity: .95; } .carart .hl.r { left: 56%; top: 56%; }
-.carart .wb { position: absolute; right: -4%; top: 2%; font: .5rem var(--title); color: #4a2800; background: var(--gold); padding: 1px 4px; border-radius: 4px; }
-.prev { display: grid; place-items: center; padding: 6px 0; background: radial-gradient(#25508f, #0f2a4e 70%); border-radius: 16px; margin-bottom: 4px; }
-.cust { text-align: left; } .cust h4 { font: .95rem var(--title); color: var(--gold); margin: 10px 0 5px; } .cust .cm { display: block; margin-top: 10px; opacity: .7; }
-.chips2 { display: flex; flex-wrap: wrap; gap: 6px; } .chipm { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; width: 62px; padding: 5px 2px; background: #0a1730; border: 2px solid var(--line); border-radius: 12px; color: var(--ink); cursor: pointer; font: inherit; }
-.chipm i { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff6; font-style: normal; display: grid; place-items: center; } .chipm small { font-size: .56rem; line-height: 1.1; text-align: center; } .chipm.on { border-color: var(--gold); background: #1a2f55; }
-.chipm.wide { width: 100%; flex-direction: row; gap: 10px; padding: 8px 12px; } .chipm.wide i { width: auto; height: auto; border: 0; font-size: 1.3rem; } .chipm.wide small { font-size: .8rem; text-align: left; }
+/* ---- garage ---- */
+.carimg { object-fit: contain; display: block; }
+.overlay.garage { align-items: flex-end; padding: 0; background: #020712e6; z-index: 70; } .overlay.garage.open { display: flex; }
+.gar { width: 100%; max-width: 520px; max-height: 100%; margin: 0 auto; display: flex; flex-direction: column; background: linear-gradient(#0f2347, #091730); border: 3px solid var(--gold); border-bottom: 0; border-radius: 22px 22px 0 0; overflow: hidden; animation: garup .35s cubic-bezier(.2, .9, .2, 1); }
+@keyframes garup { from { transform: translateY(40px); opacity: 0; } }
+.gar-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px 8px; } .gar-head b { display: block; font: 1.25rem var(--title); color: var(--gold); letter-spacing: .02em; } .gar-head small { color: var(--ink); opacity: .7; font-size: .7rem; }
+.gar-stage { position: relative; height: 250px; margin: 0 10px; border-radius: 18px; overflow: hidden; background: #0b1530; border: 2px solid #ffffff22; transition: filter .4s; }
+.gar-wall { position: absolute; inset: 0 0 38% 0; background: repeating-linear-gradient(90deg, #ffffff08 0 2px, transparent 2px 46px), linear-gradient(#1b2f5e, #0e1c3d); }
+.gar-wall::after { content: ""; position: absolute; left: 12%; right: 12%; top: 22%; height: 4px; border-radius: 4px; background: linear-gradient(90deg, #22d6c8, #ffd400, #ff5ac8); box-shadow: 0 0 14px #22d6c8aa; opacity: .75; }
+.gar-floor { position: absolute; inset: 62% 0 0 0; background: linear-gradient(#18274d, #0a1228); border-top: 2px solid #ffffff1c; } .gar-floor::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, #ffffff0b 0 1px, transparent 1px 38px); transform: perspective(160px) rotateX(48deg); transform-origin: top; }
+.gar-spot { position: absolute; left: 50%; top: -10%; width: 90%; height: 120%; transform: translateX(-50%); background: radial-gradient(ellipse at 50% 30%, #ffffff30, transparent 60%); pointer-events: none; transition: opacity .4s; }
+.gar-ring { position: absolute; left: 50%; bottom: 9%; width: 70%; height: 17%; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, #00000099 0 38%, transparent 70%), conic-gradient(#22d6c855, #ffd40055, #ff5ac855, #22d6c855); box-shadow: 0 0 24px #22d6c855; }
+.gar-car { position: absolute; left: 0; right: 0; bottom: 8%; top: 4%; display: grid; place-items: center; padding: 0 4%; } .gar-car.swap { animation: garpop .38s ease-out; } @keyframes garpop { 0% { transform: scale(.94); filter: brightness(1.7); } 100% { transform: none; filter: none; } }
+.gar-cv { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; filter: drop-shadow(0 12px 10px #0009); }
+.gar-load { color: var(--ink); opacity: .7; font-size: .9rem; }
+.gar-flash { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 40%, #ffffff66 50%, transparent 60%); transform: translateX(-100%); } .gar-flash.go { animation: garsweep .6s ease-out; } @keyframes garsweep { to { transform: translateX(100%); } }
+.gar-stage.night .gar-wall, .gar-stage.night .gar-floor { filter: brightness(.35); } .gar-stage.night .gar-spot { opacity: .15; } .gar-stage.night { background: #03060f; }
+.gar-tools { position: absolute; right: 8px; top: 8px; display: flex; gap: 6px; z-index: 3; } .gar-tools button { font: 600 .72rem Fredoka, sans-serif; padding: 6px 10px; border-radius: 999px; border: 2px solid #ffffff44; background: #0a1730cc; color: var(--ink); cursor: pointer; touch-action: none; user-select: none; } .gar-tools button.on { background: var(--gold); color: #4a2800; border-color: var(--gold); }
+.gar-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 10px 10px 6px; } .gar-tabs button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 7px 4px; border-radius: 14px; border: 2px solid var(--line); background: #0a1730; color: var(--ink); font-size: 1.15rem; cursor: pointer; } .gar-tabs button span { font: 600 .68rem Fredoka, sans-serif; }
+.gar-tabs button.on { border-color: var(--gold); background: linear-gradient(#27487f, #17315c); } .gar-tabs button.dirty::after { content: ""; position: absolute; top: 5px; right: 8px; width: 9px; height: 9px; border-radius: 50%; background: #ffd400; box-shadow: 0 0 8px #ffd400; }
+.gar-opts { padding: 4px 10px 8px; overflow-y: auto; min-height: 150px; max-height: 232px; }
+.gar-grid { display: grid; gap: 7px; } .gar-grid.paints { grid-template-columns: repeat(3, 1fr); } .gar-grid.lights { grid-template-columns: repeat(2, 1fr); } .gar-grid.two { grid-template-columns: repeat(2, 1fr); }
+.gt { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px 7px; background: linear-gradient(#17284f, #0e1b38); border: 2px solid var(--line); border-radius: 14px; color: var(--ink); cursor: pointer; font: inherit; min-width: 0; }
+.gt img { width: 100%; height: 66px; object-fit: contain; display: block; } .gt.lamp img { height: 76px; } .gt.two img { height: 80px; } .gt b { font: .74rem var(--title); line-height: 1.1; } .gt small { font-size: .62rem; opacity: .75; }
+.gt.on { border-color: var(--gold); background: linear-gradient(#2c4f88, #193a68); box-shadow: 0 0 0 2px #ffd40044, 0 0 14px #ffd40033; } .gt .hot { position: absolute; top: 4px; right: 5px; font: .52rem var(--title); font-style: normal; background: var(--gold); color: #4a2800; padding: 1px 5px; border-radius: 6px; }
+.gar-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; } .gar-seg button { padding: 7px; border-radius: 12px; border: 2px solid var(--line); background: #0a1730; color: var(--ink); font: 600 .78rem Fredoka, sans-serif; cursor: pointer; } .gar-seg button.on { border-color: var(--gold); background: #1d3a6c; }
+.gar-note { font-size: .75rem; opacity: .75; padding: 8px 4px 2px; line-height: 1.35; text-align: center; }
+.gar-foot { display: flex; align-items: center; gap: 8px; padding: 8px 12px calc(12px + env(safe-area-inset-bottom)); border-top: 2px solid #ffffff14; background: #08122a; } .gar-tot { flex: 1; min-width: 0; } .gar-tot small { display: block; font-size: .62rem; opacity: .7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .gar-tot b { font: 1.35rem var(--title); color: var(--gold); }
+.gar-foot .btn { padding: 11px 16px; font: 1rem var(--title); border-radius: 999px; } .gar-foot .btn:disabled { opacity: .4; }
+@media (max-height: 760px) { .gar-stage { height: 200px; } .gar-opts { max-height: 190px; } }
