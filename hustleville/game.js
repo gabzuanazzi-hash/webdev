@@ -31,7 +31,8 @@ const ART = {
   plane: { src: 'assets/runway/planes.png', cols: 3, rows: 2 },
   stages: { src: 'assets/runway/stages.png', cols: 4, rows: 2 },
   hubs: { src: 'assets/runway/ui/hub-icons.png', cols: 3, rows: 2 },
-  products: { src: 'assets/runway/ui/products.png', cols: 5, rows: 3 }
+  products: { src: 'assets/runway/ui/products.png', cols: 5, rows: 3 },
+  extra: { src: 'assets/runway/ui/extra-items.png', cols: 5, rows: 3 }
 };
 const BANNERS = { hubs: { src: 'assets/runway/ui/hub-banners.png', pos: [10, 50, 90] }, social: { src: 'assets/runway/ui/social-banners.png', pos: [20, 80] } };
 function bannerHTML(key, idx) { const a = BANNERS[key]; return a && a.ok ? `<div class="banner" style="background-image:url(${a.src});background-position:center ${a.pos[idx]}%"></div>` : ''; }
@@ -71,6 +72,7 @@ function stageIdx() {
 /* ---------- state ---------- */
 let S = null;
 const UI = { panel: null, sub: { money: 'jobs', crazy: 'crime', social: 'post' }, hub: null, startOpen: false, src: null, cat: 'home' };
+UI.sub.shop = 'shop';
 let modalQueue = [];
 let C = null; // active contract
 
@@ -99,8 +101,90 @@ function newLife() {
 
 function say(icon, text, cls = '') { S.log[S.log.length - 1].items.push({ i: icon, t: text, c: cls }); }
 function famAllowance() { return FAMILIES[S.tier].base * S.w; }
-function lifeCost() { return 8000 * Math.max(0.4, S.w); }
-function ownedHome() { return S.assets.filter(a => a.cat === 'home').length > 0; }
+function lifeCost() { return 8000 * Math.max(0.4, S.w) * (1 - Math.min(0.2, gearAdd('living'))); }
+function ownedHome() { return S.assets.filter(a => a.cat === 'home' && !a.rented).length > 0; }
+
+/* ---------- owned items: condition, perks and interactions ---------- */
+const findItem = (cat, n) => ASSETS[cat] && ASSETS[cat].items.find(x => x.n === n);
+const cond = (a) => a.cond == null ? 100 : a.cond;
+const itemArt = (cat, it, B) => art(it.sh || cat, it.sp, B, it.icon);
+const sellValue = (a) => a.value * 0.9 * (0.5 + cond(a) / 200);
+const assetWorth = (a) => a.value * (0.6 + 0.4 * cond(a) / 100);
+function gearMul(k) { return S.assets.reduce((m, a) => { const it = findItem(a.cat, a.n); return it && it.fx && it.fx[k] && cond(a) > 20 ? m * it.fx[k] : m; }, 1); }
+function gearAdd(k) { return S.assets.reduce((m, a) => { const it = findItem(a.cat, a.n); return it && it.fx && it.fx[k] && cond(a) > 20 ? m + it.fx[k] : m; }, 0); }
+const DECAY = { home: 3, car: 10, boat: 9, plane: 7, watch: 1, clothes: 6, tech: 6, gear: 7 };
+const RENT = { home: 0.045, boat: 0.06, plane: 0.06 };
+const TRIPS = ['Lisbon', 'Dubai', 'Tokyo', 'Cape Town', 'Rio', 'Reykjavik', 'Bali', 'Monaco', 'Maldives', 'New York'];
+const dest = () => pick(TRIPS);
+const ACTS = {
+  renovate: { icon: '🛠️', t: 'Renovate', cost: a => a.price * 0.05, run(a) { a.cond = Math.min(100, cond(a) + 25); a.value *= 1.03; S.happy = clamp(S.happy + 2); return `You renovated your ${a.n}. It looks brand new.`; } },
+  furnish: { icon: '🛋️', t: 'Furnish', cost: a => a.price * 0.03, run(a) { a.value *= 1.02; S.happy = clamp(S.happy + 4); return `You furnished your ${a.n} beautifully.`; } },
+  party: { icon: '🎉', t: 'Throw a party', cost: a => Math.max(300, a.price * 0.003), run(a) {
+    let m = `You threw a party with your ${a.n}.`; S.happy = clamp(S.happy + 6);
+    const f = ri(0, 2) + (S.fame > 30 ? 1 : 0); S.fame += f; S.social.followers += Math.round(S.social.followers * 0.003 * f + f * 5);
+    if (S.partner) S.partner.score = clamp(S.partner.score + 6);
+    if (chance(0.2)) { a.cond = Math.max(0, cond(a) - 5); m += ' Things got messy.'; } else if (chance(0.1)) { S.fame += 2; m += ' A celebrity showed up and everyone posted about it!'; }
+    return m; } },
+  rent: { icon: '🏷️', t: a => a.rented ? 'Stop renting out' : 'Rent it out', toggle: true, cost: () => 0, run(a) {
+    a.rented = !a.rented; const r = Math.round(a.price * RENT[a.cat]);
+    return a.rented ? `Your ${a.n} is now rented out for about ${fmt(r)} a year${a.cat === 'home' ? '. You will pay rent yourself unless you own another home' : ''}.` : `You took your ${a.n} off the rental market.`; } },
+  service: { icon: '🔧', t: a => ({ car: 'Service', boat: 'Refit', plane: 'Overhaul' }[a.cat] || 'Maintain'), cost: a => a.price * ({ plane: 0.04, boat: 0.035 }[a.cat] || 0.03), run(a) { a.cond = Math.min(100, cond(a) + 30); return `Your ${a.n} is in great shape again.`; } },
+  roadtrip: { icon: '🛣️', t: 'Road trip', cost: a => 100 + a.price * 0.004, run(a) {
+    S.happy = clamp(S.happy + 5); S.trips++; a.cond = Math.max(0, cond(a) - 3);
+    if (cond(a) < 45 && chance(0.5)) { const c = a.price * 0.01; S.cash -= c; S.happy = clamp(S.happy - 2); return `Your ${a.n} broke down on the trip. Tow and repair: ${fmt(c)}.`; }
+    return `You drove your ${a.n} to ${dest()}. Great memories.`; } },
+  race: { icon: '🏁', t: 'Street race', cost: () => 200, run(a) {
+    if (chance(0.05)) { S.cash -= 1500; S.heat += 1; return 'Police broke up the race and fined you $1,500.'; }
+    if (chance(0.18)) { const c = a.price * 0.02; S.cash -= c; a.cond = Math.max(0, cond(a) - 40); S.health = clamp(S.health - 12); return `You crashed your ${a.n}. Repairs: ${fmt(c)}.`; }
+    if (chance(0.3 + Math.min(0.3, a.price / 2e6))) { const p = Math.round(a.price * 0.02 + 500); S.cash += p; S.fame += 2; return `You won the race and ${fmt(p)}! Everyone is talking about it.`; }
+    return 'You lost the race, but it was a thrill.'; } },
+  sail: { icon: '⛵', t: 'Sail away', cost: a => 1500 + a.price * 0.005, run(a) { S.happy = clamp(S.happy + 8); S.trips++; a.cond = Math.max(0, cond(a) - 3); return `You sailed your ${a.n} to ${dest()}. Pure freedom.`; } },
+  fly: { icon: '🛫', t: 'Fly somewhere', cost: a => 3000 + a.price * 0.006, run(a) { S.happy = clamp(S.happy + 10); S.trips++; S.fame += 1; a.cond = Math.max(0, cond(a) - 4); return `You flew your ${a.n} to ${dest()} for the weekend.`; } },
+  flex: { icon: '📸', t: 'Flex it online', cost: () => 0, run(a) {
+    const g = Math.round(Math.max(20, S.social.followers * 0.01) * rnd(0.5, 1.5)); S.social.followers += g; S.fame += 0.3;
+    if (chance(0.08)) { S.social.rep = clamp(S.social.rep - 5); return `You posted your ${a.n}. People called it a show-off post (+${g} followers, reputation down).`; }
+    return `You posted your ${a.n}: +${g} followers.`; } },
+  appraise: { icon: '🔍', t: 'Appraise', cost: a => Math.max(50, a.price * 0.01), run(a) {
+    const f = rnd(0.88, 1.18); a.value *= f; return f > 1.05 ? `The appraiser loved your ${a.n}. Value up ${Math.round((f - 1) * 100)}%.` : f < 0.95 ? `Bad news: your ${a.n} is worth ${Math.round((1 - f) * 100)}% less than thought.` : `Your ${a.n} is worth about what you paid.`; } },
+  auction: { icon: '🔨', t: 'Auction', sell: true, cost: () => 0, run(a) { const v = Math.round(a.value * rnd(0.85, 1.4) * 0.9 * (0.6 + cond(a) / 250)); S.cash += v; return `Your ${a.n} sold at auction for ${fmt(v)}.`; } },
+  wear: { icon: '🕺', t: 'Wear it out', cost: () => 0, run(a) { S.happy = clamp(S.happy + 2); S.fame += 0.3; if (S.partner) S.partner.score = clamp(S.partner.score + 3); return `You got compliments in your ${a.n}.`; } },
+  donate: { icon: '🎗️', t: 'Donate', sell: true, cost: () => 0, run(a) { S.social.rep = clamp(S.social.rep + 4); S.happy = clamp(S.happy + 3); S.fame += 0.3; return `You donated your ${a.n} to charity.`; } },
+  display: { icon: '🖼️', t: 'Host an exhibition', cost: a => a.price * 0.005, run(a) { S.fame += 1.5; S.happy = clamp(S.happy + 3); a.value *= rnd(1, 1.06); return `Guests admired your ${a.n} at your exhibition.`; } },
+  play: { icon: '🎾', t: 'Play together', cost: () => 0, run(a) { a.bond = Math.min(100, (a.bond == null ? 50 : a.bond) + 10); S.happy = clamp(S.happy + 4); return `You played with your ${a.n.toLowerCase()}. So much love.`; } },
+  train: { icon: '🦴', t: 'Train', cost: () => 100, run(a) { a.bond = Math.min(100, (a.bond == null ? 50 : a.bond) + 8); return `Your ${a.n.toLowerCase()} learned something new.`; } },
+  vet: { icon: '🩺', t: 'Vet check-up', cost: a => 150 + a.price * 0.005, run(a) { a.extraLife = (a.extraLife || 0) + 1; a.bond = Math.min(100, (a.bond == null ? 50 : a.bond) + 5); return `The vet says your ${a.n.toLowerCase()} is healthy. Maybe a year longer to live.`; } },
+  game: { icon: '🎮', t: 'Play games', cost: () => 0, run() { S.happy = clamp(S.happy + 4); S.smarts = clamp(S.smarts + 0.5); return 'You lost track of time in a great game.'; } },
+  stream: { icon: '🔴', t: 'Stream', cost: () => 0, run() { const F = S.social.followers, g = Math.round(ri(5, 60) + F * 0.004), tip = ri(10, 200); S.social.followers += g; S.cash += tip; S.fame += 0.2; return `Your stream gained ${g} followers and ${fmt(tip)} in tips.`; } },
+  workout: { icon: '🏋️', t: 'Workout', cost: () => 0, run() { S.health = clamp(S.health + 5); S.looks = clamp(S.looks + 2); return 'A solid workout. You feel stronger.'; } },
+  relax: { icon: '♨️', t: 'Relax', cost: () => 0, run() { S.happy = clamp(S.happy + 5); S.health = clamp(S.health + 1); if (S.partner) S.partner.score = clamp(S.partner.score + 4); return 'You unwound in the hot tub.'; } },
+  movie: { icon: '🍿', t: 'Movie night', cost: () => 0, run() { S.happy = clamp(S.happy + 5); if (S.partner) { S.partner.score = clamp(S.partner.score + 8); return 'A cozy movie night with your partner.'; } return 'You watched a great movie in style.'; } },
+  swim: { icon: '🏊', t: 'Swim', cost: () => 0, run() { S.health = clamp(S.health + 3); S.happy = clamp(S.happy + 3); return 'A refreshing swim.'; } },
+  showoff: { icon: '📱', t: 'Show it off', cost: () => 0, run() { const g = Math.round(Math.max(15, S.social.followers * 0.006)); S.social.followers += g; S.fame += 0.3; return `Your smart-home tour got +${g} followers.`; } }
+};
+const itemActs = (a) => { const it = findItem(a.cat, a.n); return (it && it.acts) || (ASSETS[a.cat] && ASSETS[a.cat].acts) || []; };
+const actLabel = (id, a) => { const d = ACTS[id]; return typeof d.t === 'function' ? d.t(a) : d.t; };
+
+function assetsYear() {
+  let up = 0, rentInc = 0, petJoy = 0;
+  for (let k = S.assets.length - 1; k >= 0; k--) {
+    const a = S.assets[k], it = findItem(a.cat, a.n) || {};
+    up += a.price * a.up;
+    a.value = Math.max(a.price * 0.02, a.value * (1 + a.dep + (it.vol ? gauss() * it.vol : 0)));
+    a.cond = Math.max(0, cond(a) - (DECAY[a.cat] || 0)); a.used = {};
+    if (a.rented && RENT[a.cat]) rentInc += a.price * RENT[a.cat] * cond(a) / 100;
+    if (a.cat === 'pet') {
+      a.age = (a.age || 0) + 1; a.bond = Math.max(0, (a.bond == null ? 50 : a.bond) - 8);
+      if (a.age > (it.life || 12) + (a.extraLife || 0) && chance(0.5)) { S.assets.splice(k, 1); S.happy = clamp(S.happy - 12); say('🕊️', `Your ${a.n.toLowerCase()} passed away after a long life. You miss them.`, 'bad'); }
+      else if (a.bond > 60) petJoy += 2;
+    } else if (DECAY[a.cat] >= 5 && cond(a) < 35 && chance(0.35)) {
+      const bill = a.price * 0.03; S.cash -= bill; up += bill; a.cond = Math.min(100, cond(a) + 20); say('🔧', `Your ${a.n} broke down. Repair bill: ${fmt(bill)}.`, 'bad');
+    }
+  }
+  if (rentInc > 0) { S.cash += rentInc; say('🏷️', `Rental income from your assets: ${fmt(rentInc)}.`, 'good'); }
+  if (petJoy) S.happy = clamp(S.happy + petJoy);
+  S.smarts = clamp(S.smarts + gearAdd('smarts')); S.health = clamp(S.health + gearAdd('health'));
+  return up;
+}
 
 /* ---------- yearly goals + XP ---------- */
 const GOAL_POOL = [
@@ -150,7 +234,7 @@ function bizValue(b) { return HUBS[b.id].value(b); }
 function assetValue(a) { return a.value; }
 function netWorth() {
   const inv = S.invest.savings + S.invest.index + S.invest.crypto;
-  return S.cash + inv + S.biz.reduce((t, b) => t + bizValue(b), 0) + S.assets.reduce((t, a) => t + a.value, 0);
+  return S.cash + inv + S.biz.reduce((t, b) => t + bizValue(b), 0) + S.assets.reduce((t, a) => t + assetWorth(a), 0);
 }
 function stageIcon() {
   if (!S.alive) return '⚰️';
@@ -334,8 +418,7 @@ function ageUp() {
     S.cash -= living + rent; expense += living + rent;
     say('🧾', `Living costs${rent ? ' and rent' : ''}: ${fmt(living + rent)}.`, '');
   }
-  let up = 0;
-  S.assets.forEach(a => { up += a.price * a.up; a.value = Math.max(a.price * 0.02, a.value * (1 + a.dep)); });
+  const up = assetsYear();
   if (up > 0) { S.cash -= up; expense += up; say('🧾', `Upkeep on your assets: ${fmt(up)}.`, ''); }
   S.kids.forEach(k => { k.age++; if (k.age < 18) { const c = 8000 * Math.max(0.4, S.w); S.cash -= c; expense += c; } });
   if (S.kids.some(k => k.age < 18)) say('🧒', 'Raising your kids costs you, but it\'s worth it.', '');
@@ -439,7 +522,7 @@ function renderPanel() {
   const money = hubOpen ? (UI.src ? 'Sourcing' : HUBS[S.biz[UI.hub].id].name) : { jobs: 'Careers', biz: 'Business Empire', invest: 'Invest' }[UI.sub.money];
   const T = { money: [money, moneyHTML], social: ['Social Media', socialHTML], love: ['Love & Family', loveHTML], shop: ['Asset Shop', shopHTML], crazy: ['Crazy', crazyHTML], status: ['Life & Goals', statusHTML] }[UI.panel];
   $('sheetTitle').textContent = T[0];
-  const view = [UI.panel, UI.sub.money, UI.sub.social, UI.sub.crazy, UI.hub, UI.src ? (UI.src.sel ? 's2' : 's1') : 0, UI.startOpen].join('|');
+  const view = [UI.panel, UI.sub.money, UI.sub.social, UI.sub.crazy, UI.hub, UI.src ? (UI.src.sel ? 's2' : 's1') : 0, UI.startOpen, UI.sub.shop, UI.cat].join('|');
   const y = view === renderPanel.last ? $('sheetBody').scrollTop : 0;
   renderPanel.last = view;
   $('sheetBody').innerHTML = locked() + T[1]();
@@ -454,7 +537,10 @@ function moneyHTML() {
   const sub = UI.sub.money;
   return ribbonHTML() + tabs('money', [['jobs', '💼 Jobs'], ['biz', '🏢 Business'], ['invest', '📊 Invest']]) + ({ jobs: jobsHTML, biz: bizHTML, invest: investHTML }[sub])();
 }
-function shopHTML() { return ribbonHTML() + assetsHTML(); }
+function shopHTML() {
+  const sub = UI.sub.shop || 'shop';
+  return ribbonHTML() + tabs('shop', [['shop', '🛍️ Shop'], ['mine', `🎒 My stuff (${S.assets.length})`]]) + (sub === 'mine' ? stuffHTML() : assetsHTML());
+}
 
 function jobsHTML() {
   const j = jobDef();
@@ -518,14 +604,35 @@ function hubHTML(i) {
 }
 
 function assetsHTML() {
-  let h = '<div class="chips f">' + Object.keys(ASSETS).map(k => `<button class="${UI.cat === k ? 'on' : ''}" data-a="cat" data-v="${k}">${ASSETS[k].icon} ${ASSETS[k].label}</button>`).join('') + '</div>';
-  const owned = S.assets.map((a, i) => ({ a, i })).filter(x => x.a.cat === UI.cat);
-  if (owned.length) h += '<h5>You own</h5>' + owned.map(({ a, i }) => `<div class="row"><span class="ic">${art(a.cat, a.idx, 44, a.icon)}</span><div class="grow"><b>${a.n}</b><small>Worth ${fmt(a.value)}${a.up ? ' · upkeep ' + fmt(a.price * a.up) + '/yr' : ''}</small></div><button class="btn sm" data-a="sellAsset" data-v="${i}">Sell</button></div>`).join('');
-  h += '<h5>Shop</h5><div class="agrid">';
-  ASSETS[UI.cat].items.forEach((it, i) => {
-    h += `<div class="acard"><span class="ai">${art(UI.cat, i, 64, it.icon)}</span><b>${it.n}</b><small>${it.up ? 'upkeep ' + fmt(it.price * it.up) + '/yr' : 'no upkeep'}${it.looks ? ' · +' + it.looks + ' looks' : ''}</small><button class="gbtn sm" ${S.cash >= it.price && !S.jail ? '' : 'disabled'} data-a="buy" data-v="${i}">${fmt(it.price)}</button></div>`;
+  const cat = ASSETS[UI.cat];
+  let h = '<div class="chips scroll">' + Object.keys(ASSETS).map(k => `<button class="${UI.cat === k ? 'on' : ''}" data-a="cat" data-v="${k}">${ASSETS[k].icon}<small>${ASSETS[k].label}</small></button>`).join('') + '</div>';
+  h += `<div class="agrid">`;
+  cat.items.forEach((it, i) => {
+    const acts = it.acts || cat.acts || [];
+    h += `<div class="acard"><span class="ai">${itemArt(UI.cat, it, 64)}</span><b>${it.n}</b>
+      <small>${UI.cat === 'exp' ? 'One-time experience' : it.up ? 'upkeep ' + fmt(it.price * it.up) + '/yr' : 'no upkeep'}${it.looks ? ' · +' + it.looks + ' looks' : ''}</small>
+      ${it.perk ? `<span class="perk">${it.perk}</span>` : ''}${acts.length ? `<small class="can">Can: ${acts.slice(0, 4).map(id => ACTS[id].icon + ' ' + (typeof ACTS[id].t === 'function' ? ACTS[id].t({ cat: UI.cat }) : ACTS[id].t)).join(' · ')}</small>` : ''}
+      <button class="gbtn sm" ${S.cash >= it.price && !S.jail ? '' : 'disabled'} data-a="buy" data-v="${i}">${fmt(it.price)}</button></div>`;
   });
   return h + '</div>';
+}
+function stuffHTML() {
+  if (!S.assets.length) return '<div class="note">You do not own anything yet. Buy something in the Shop, then come back here to use it, upgrade it, rent it out or sell it.</div>';
+  let h = '', last = null;
+  const order = Object.keys(ASSETS);
+  S.assets.map((a, i) => ({ a, i })).sort((x, y) => order.indexOf(x.a.cat) - order.indexOf(y.a.cat)).forEach(({ a, i }) => {
+    if (a.cat !== last) { h += `<h5>${ASSETS[a.cat].icon} ${ASSETS[a.cat].label}</h5>`; last = a.cat; }
+    const it = findItem(a.cat, a.n) || {}, c = cond(a), used = a.used || {};
+    const btns = itemActs(a).map(id => {
+      const d = ACTS[id], cost = Math.round(d.cost(a)), why = !d.toggle && used[id] ? 'Done this year' : S.cash < cost ? 'Need ' + fmt(cost) : S.jail ? 'In prison' : '';
+      return `<button class="mini" ${why ? 'disabled title="' + why + '"' : ''} data-a="itemAct" data-v="${i}:${id}">${d.icon} ${actLabel(id, a)}${cost ? ' ' + fmt(cost) : ''}</button>`;
+    }).join('');
+    h += `<div class="card item"><div class="row nobg"><span class="ic">${itemArt(a.cat, it, 52)}</span><div class="grow"><b>${a.n}</b> ${a.rented ? '<i class="tag">Rented out</i>' : ''}
+      <small>Worth ${fmt(a.value)} · ${a.up ? 'upkeep ' + fmt(a.price * a.up) + '/yr' : 'no upkeep'}${a.cat === 'pet' ? ' · bond ' + Math.round(a.bond == null ? 50 : a.bond) + ' · age ' + (a.age || 0) : ''}</small>
+      ${DECAY[a.cat] ? `<div class="sb"><label>Condition</label><div class="bar"><i style="width:${c}%;background:${hcol(c)}"></i></div><b>${Math.round(c)}</b></div>` : ''}${it.perk ? `<span class="perk">${it.perk}</span>` : ''}</div></div>
+      <div class="btns">${btns}<button class="mini" ${a.cat === 'pet' ? 'disabled' : ''} data-a="sellAsset" data-v="${i}">💵 Sell ${fmt(sellValue(a))}</button></div></div>`;
+  });
+  return h;
 }
 
 function investHTML() {
@@ -563,9 +670,9 @@ function crazyHTML() {
 }
 
 function lifeTiles() {
-  const homeIdx = S.assets.filter(a => a.cat === 'home').reduce((m, a) => Math.max(m, a.idx == null ? 0 : a.idx), -1);
+  const homeIdx = S.assets.filter(a => a.cat === 'home').reduce((m, a) => Math.max(m, ASSETS.home.items.findIndex(x => x.n === a.n)), -1);
   return [
-    { n: 'Home', ico: 'life-home', e: '🏠', p: homeIdx < 0 ? 0 : Math.round((homeIdx + 1) / 7 * 100), lv: homeIdx + 1 },
+    { n: 'Home', ico: 'life-home', e: '🏠', p: homeIdx < 0 ? 0 : Math.round((homeIdx + 1) / ASSETS.home.items.length * 100), lv: homeIdx + 1 },
     { n: 'Relationships', ico: 'life-rel', e: '💞', p: S.partner ? Math.round(S.partner.score) : 0, lv: 1 + (S.partner && S.partner.married ? 1 : 0) + Math.min(3, S.kids.length) },
     { n: 'Health', ico: 'life-health', e: '🏃', p: Math.round(S.health), lv: 1 + Math.floor(S.health / 25) },
     { n: 'Education', ico: 'life-edu', e: '🎓', p: Math.round(S.smarts), lv: S.deg ? 4 : S.college ? 3 : S.age >= 14 ? 2 : 1 },
@@ -625,12 +732,34 @@ const A = {
   },
   sell(i) { openSale(+i); },
   buy(i) {
-    const it = ASSETS[UI.cat].items[i]; if (S.cash < it.price) return;
-    S.cash -= it.price; S.assets.push({ cat: UI.cat, idx: i, n: it.n, icon: it.icon, price: it.price, up: it.up, dep: it.dep, value: it.price });
-    S.happy = clamp(S.happy + it.happy); S.fame += it.fame || 0; S.looks = clamp(S.looks + (it.looks || 0));
-    say(it.icon, `You bought a ${it.n} for ${fmt(it.price)}.`, 'gold'); checkAch(); save(); refresh(); renderFeed();
+    const it = ASSETS[UI.cat].items[i]; if (!it || S.cash < it.price) return;
+    S.cash -= it.price;
+    if (UI.cat === 'exp') {
+      const e = it.e || {}; let msg = it.msg || e.msg || '';
+      if (it.gamble) { const r = Math.random(); if (r < 0.04) { S.cash += 400000; S.happy = clamp(S.happy + 15); msg = 'JACKPOT! You won $400,000.'; } else if (r < 0.4) { const w = Math.round(it.price * 1.6); S.cash += w; S.happy = clamp(S.happy + 6); msg = `You won ${fmt(w)}.`; } else { S.happy = clamp(S.happy - 3); msg = 'The house won this time.'; } }
+      S.happy = clamp(S.happy + (e.happy || 0)); S.health = clamp(S.health + (e.health || 0)); S.smarts = clamp(S.smarts + (e.smarts || 0)); S.fame += e.fame || 0; S.trips += e.trips || 0; if (e.deg) S.deg = true;
+      if (it.partner && S.partner) S.partner.score = clamp(S.partner.score + it.partner);
+      if (it.risk && chance(it.risk.p)) { if (it.risk.cost) S.cash -= it.risk.cost; if (it.risk.health) S.health = clamp(S.health + it.risk.health); msg = it.risk.msg; }
+      say(it.icon, `${it.n}: ${msg}`, 'gold'); toast(msg); if (S.health <= 0) die();
+    } else {
+      S.assets.push({ cat: UI.cat, n: it.n, icon: it.icon, price: it.price, up: it.up, dep: it.dep, value: it.price, cond: 100, used: {}, age: 0, bond: 50 });
+      S.happy = clamp(S.happy + it.happy); S.fame += it.fame || 0; S.looks = clamp(S.looks + (it.looks || 0));
+      say(it.icon, `You bought a ${it.n} for ${fmt(it.price)}.`, 'gold'); toast(`Bought ${it.n}. Find it in My stuff.`);
+    }
+    checkAch(); save(); refresh(); renderFeed();
   },
-  sellAsset(i) { const a = S.assets[i]; const v = a.value * 0.9; S.cash += v; say(a.icon, `You sold your ${a.n} for ${fmt(v)}.`, ''); S.assets.splice(i, 1); save(); refresh(); renderFeed(); },
+  sellAsset(i) { const a = S.assets[i]; if (!a) return; const v = sellValue(a); S.cash += v; say(a.icon, `You sold your ${a.n} for ${fmt(v)}.`, ''); S.assets.splice(i, 1); save(); refresh(); renderFeed(); },
+  itemAct(v) {
+    const [i, id] = v.split(':'), a = S.assets[+i]; if (!a) return;
+    const d = ACTS[id]; if (!d || S.jail) return;
+    const cost = Math.round(d.cost(a)); a.used = a.used || {};
+    if ((!d.toggle && a.used[id]) || S.cash < cost) return;
+    S.cash -= cost; if (!d.toggle) a.used[id] = true;
+    const msg = d.run(a); if (d.sell) S.assets.splice(+i, 1);
+    S.happy = clamp(S.happy); say(d.icon, msg, 'gold'); toast(msg); S.done.item = true;
+    if (S.health <= 0) die();
+    checkAch(); save(); refresh(); renderFeed();
+  },
   inv(v) { const [k, p] = v.split(':'); const amt = Math.max(0, S.cash) * parseFloat(p); if (amt < 1) return; S.done.inv = true; S.cash -= amt; S.invest[k] += amt; save(); refresh(); },
   wd(k) { S.cash += S.invest[k]; S.invest[k] = 0; save(); refresh(); },
   meet() {

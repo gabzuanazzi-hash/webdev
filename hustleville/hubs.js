@@ -133,7 +133,7 @@ HUBS.ecom = {
     let best = null;
     h.products.forEach((p, k) => {
       const vis = visitors * ws[k] / wt * rnd(0.85, 1.15);
-      let o = vis * (h.conv / 100) * (0.7 + p.trend / 150) * (h.rating / 4.2);
+      let o = vis * ((h.conv + gearAdd('conv')) / 100) * (0.7 + p.trend / 150) * (h.rating / 4.2);
       if ((p.mode || 'drop') === 'stock') {
         o *= 1.06;                                   // faster shipping converts a little better
         const sold = Math.min(o, p.stock || 0);

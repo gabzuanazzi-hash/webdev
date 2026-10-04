@@ -47,7 +47,7 @@ function doPost(id) {
   const match = T.useTrend || chance(0.15);
   const quality = 0.7 + S.looks / 100 * 0.3 + S.smarts / 400 + (T.smarts ? S.smarts / 300 : 0) + (S.fame > 40 ? 0.1 : 0);
   const mult = Math.exp(gauss() * T.sig);
-  let reach = (0.06 * F + 70) * mult * quality * s.mood * (s.luck || 1);
+  let reach = (0.06 * F + 70) * mult * quality * s.mood * (s.luck || 1) * gearMul('reach');
   if (T.collab) reach += (F * rnd(0.5, 4) + rnd(500, 20000)) * 0.15;
   const flop = chance(0.18); if (flop) reach *= 0.25;
   let pv = T.pv * (match ? 2.2 : 1) * (s.mood > 1 ? 1.5 : s.mood < 1 ? 0.6 : 1) * (1 + S.looks / 300);
