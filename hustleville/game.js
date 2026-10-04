@@ -68,12 +68,17 @@ const AVATARS = [
   { k: 'auburn', n: 'Ruby', who: 'Woman', src: 'assets/avatars/auburn.webp' },
   { k: 'brown', n: 'Ben', who: 'Man', src: 'assets/avatars/brown.webp' },
   { k: 'bob', n: 'Mei', who: 'Woman', src: 'assets/avatars/bob.webp' },
-  { k: 'fade', n: 'Marcus', who: 'Man', src: 'assets/avatars/fade.webp' }
+  { k: 'fade', n: 'Marcus', who: 'Man', src: 'assets/avatars/fade.webp' },
+  { k: 'amara', n: 'Amara', who: 'Woman', src: 'assets/avatars/amara.webp', t: 1 }, { k: 'diego', n: 'Diego', who: 'Man', src: 'assets/avatars/diego.webp', t: 1 },
+  { k: 'yuki', n: 'Yuki', who: 'Woman', src: 'assets/avatars/yuki.webp', t: 1 }, { k: 'kenji', n: 'Kenji', who: 'Man', src: 'assets/avatars/kenji.webp', t: 1 },
+  { k: 'priya', n: 'Priya', who: 'Woman', src: 'assets/avatars/priya.webp', t: 1 }, { k: 'omar', n: 'Omar', who: 'Man', src: 'assets/avatars/omar.webp', t: 1 },
+  { k: 'sofia', n: 'Sofia', who: 'Woman', src: 'assets/avatars/sofia.webp', t: 1 }, { k: 'liam', n: 'Liam', who: 'Man', src: 'assets/avatars/liam.webp', t: 1 },
+  { k: 'olga', n: 'Olga', who: 'Woman', src: 'assets/avatars/olga.webp', t: 1 }, { k: 'noah', n: 'Noah', who: 'Man', src: 'assets/avatars/noah.webp', t: 1 }
 ];
 const avatarOf = () => AVATARS.find(a => a.k === (S && S.avatar)) || AVATARS[0];
 function avatarImg(av, idx, B) {                       // idx = life stage 0..7 (baby..ghost), 4x2 atlas of 192px cells; drawn at 80% so the figure sits centred with a margin
-  const k = 0.8, c = B * k, o = (B - c) / 2, oy = o + B * 0.03;
-  return `<span class="art av" style="width:${B}px;height:${B}px;border-radius:50%;background-image:url(${av.src});background-size:${c * 4}px ${c * 2}px;background-position:${o - (idx % 4) * c}px ${oy - Math.floor(idx / 4) * c}px"></span>`;
+  const k = av.t ? 1 : 0.84, c = B * k, o = (B - c) / 2, oy = o + B * (av.t ? 0 : 0.04);
+  return `<span class="art av" style="width:${B}px;height:${B}px;border-radius:50%;position:relative;overflow:hidden;display:inline-block"><i style="position:absolute;left:${o}px;top:${oy}px;width:${c}px;height:${c}px;background-image:url(${av.src});background-size:${c * 4}px ${c * 2}px;background-position:${-(idx % 4) * c}px ${-Math.floor(idx / 4) * c}px"></i></span>`;
 }
 // Avatar crop: zoom into the head and shoulders so the face fills the circle.
 function avatarArt(idx, B, fb) {
