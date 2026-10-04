@@ -642,6 +642,8 @@ function assetsHTML() {
   const BRANDS = ['Scarlatti', 'Bellucci', 'Zeffiro', 'Kronvik', 'Torrente'], BRAND_BLURB = { Scarlatti: '🇮🇹 Red-blooded Italian V8 & V12 legends', Bellucci: '🇫🇷 Horseshoe-grille ultra-luxury hypercars', Zeffiro: '🇮🇹 Hand-built carbon-fibre art pieces', Kronvik: '🇸🇪 Wing-heavy Scandinavian speed machines', Torrente: '🇮🇹 Razor-edged raging-bull wedge supercars' };
   const order = UI.cat === 'car' ? cat.items.map((it, i) => ({ it, i })).sort((x, y) => (BRANDS.indexOf(x.it.brand) + 1) - (BRANDS.indexOf(y.it.brand) + 1) || x.it.tier - y.it.tier || x.i - y.i) : cat.items.map((it, i) => ({ it, i }));
   let lastBrand = null;
+  const canIds = [...new Set(cat.items.flatMap(it => it.acts || cat.acts || []))], lab = (id) => ACTS[id].icon + ' ' + (typeof ACTS[id].t === 'function' ? ACTS[id].t({ cat: UI.cat }) : ACTS[id].t);
+  if (canIds.length) h += `<div class="cando"><b>What you can do with these</b><span>${canIds.map(id => `<i>${lab(id)}</i>`).join('')}</span></div>`;
   h += `<div class="agrid">`;
   order.forEach(({ it, i }) => {
     if (UI.cat === 'car' && (it.brand || '') !== lastBrand) {
@@ -649,10 +651,9 @@ function assetsHTML() {
       const gk = lastBrand || 'everyday', cnt = cat.items.filter(x => (x.brand || '') === lastBrand).length, shut = !!(UI.shut && UI.shut[gk]);
       h += `</div><button class="brandhead ${lastBrand ? '' : 'plain'} ${shut ? 'shut' : ''}" data-a="toggleGrp" data-v="${gk}"><span class="bh"><b>${lastBrand || '🚗 Everyday & classic'}</b>${lastBrand ? `<small>${BRAND_BLURB[lastBrand]}</small>` : ''}</span><em>${cnt}</em><i class="chev">▾</i></button><div class="agrid ${shut ? 'hide' : ''}">`;
     }
-    const acts = it.acts || cat.acts || [];
     h += `<div class="acard"><span class="ai">${itemArt(UI.cat, it, 64)}</span><b>${it.n}</b>
       <small>${UI.cat === 'exp' ? 'One-time experience' : it.up ? 'upkeep ' + fmt(it.price * it.up) + '/yr' : 'no upkeep'}${it.looks ? ' · +' + it.looks + ' looks' : ''}</small>
-      ${it.perk ? `<span class="perk">${it.perk}</span>` : ''}${acts.length ? `<small class="can">Can: ${acts.slice(0, 4).map(id => ACTS[id].icon + ' ' + (typeof ACTS[id].t === 'function' ? ACTS[id].t({ cat: UI.cat }) : ACTS[id].t)).join(' · ')}</small>` : ''}
+      ${it.perk ? `<span class="perk">${it.perk}</span>` : ''}
       ${it.brand ? `<span class="brand t${it.tier}">${it.brand}${it.unique ? ' · 1/1 UNIQUE' : ''}</span>` : ''}
       ${buyBlock(it, i)}</div>`;
   });
