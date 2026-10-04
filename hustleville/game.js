@@ -32,7 +32,10 @@ const ART = {
   stages: { src: 'assets/runway/stages.png', cols: 4, rows: 2 },
   hubs: { src: 'assets/runway/ui/hub-icons.png', cols: 3, rows: 2 },
   products: { src: 'assets/runway/ui/products.png', cols: 5, rows: 3 },
-  extra: { src: 'assets/runway/ui/extra-items.png', cols: 5, rows: 3 }
+  extra: { src: 'assets/runway/ui/extra-items.png', cols: 5, rows: 3 },
+  itA: { src: 'assets/runway/ui/items-a.jpg', cols: 5, rows: 3 },
+  itB: { src: 'assets/runway/ui/items-b.jpg', cols: 5, rows: 3 },
+  itC: { src: 'assets/runway/ui/items-c.jpg', cols: 5, rows: 3 }
 };
 const BANNERS = { hubs: { src: 'assets/runway/ui/hub-banners.png', pos: [10, 50, 90] }, social: { src: 'assets/runway/ui/social-banners.png', pos: [20, 80] } };
 function bannerHTML(key, idx) { const a = BANNERS[key]; return a && a.ok ? `<div class="banner" style="background-image:url(${a.src});background-position:center ${a.pos[idx]}%"></div>` : ''; }
@@ -108,6 +111,28 @@ function ownedHome() { return S.assets.filter(a => a.cat === 'home' && !a.rented
 const findItem = (cat, n) => ASSETS[cat] && ASSETS[cat].items.find(x => x.n === n);
 const cond = (a) => a.cond == null ? 100 : a.cond;
 const itemArt = (cat, it, B) => art(it.sh || cat, it.sp, B, it.icon);
+/* ---------- car customization ---------- */
+const PAINTS = [['Stock', null], ['Red', -38], ['Orange', -8], ['Yellow', 17], ['Lime', 82], ['Teal', 137], ['Blue', 177], ['Purple', 237], ['Pink', 282], ['Matte Black', 'k'], ['Pearl White', 'w'], ['Silver', 's']];
+const LIGHTS = [['Stock white', '#fff6d8'], ['Ice blue', '#7fd6ff'], ['Neon purple', '#b06bff'], ['Lime', '#9dff4a'], ['Hot red', '#ff3b3b'], ['Gold', '#ffc83d']];
+const paintFilter = (h) => h == null ? '' : h === 'k' ? 'grayscale(1) brightness(.3) contrast(1.3)' : h === 'w' ? 'grayscale(1) brightness(1.9)' : h === 's' ? 'grayscale(1) brightness(1.15) contrast(1.1)' : `sepia(1) saturate(2.6) hue-rotate(${h}deg)`;
+function carArt(a, B) {
+  const it = findItem(a.cat, a.n) || {}, m = a.mods || {}, base = itemArt(a.cat, it, B);
+  if (a.cat !== 'car' || !base.startsWith('<span')) return base;
+  const pf = paintFilter(m.paint != null ? PAINTS[m.paint][1] : null), lc = m.light ? LIGHTS[m.light][1] : null;
+  return `<span class="carart" style="width:${B}px;height:${B}px"><span class="cbody${m.wide ? ' wide' : ''}" style="${pf ? 'filter:' + pf : ''}">${base}</span>${lc ? `<i class="hl" style="background:${lc};box-shadow:0 0 ${B / 5}px ${B / 14}px ${lc}"></i><i class="hl r" style="background:${lc};box-shadow:0 0 ${B / 5}px ${B / 14}px ${lc}"></i>` : ''}${m.wide ? '<b class="wb">WIDE</b>' : ''}</span>`;
+}
+function openCustom(i) {
+  const a = S.assets[i]; if (!a) return; const m = a.mods = a.mods || {};
+  const wideCost = Math.round(a.price * 0.12), paintCost = Math.max(1000, Math.round(a.price * 0.015)), lightCost = Math.max(500, Math.round(a.price * 0.005));
+  const chip = (kind, idx, label, sw, on, cost) => `<button class="chipm ${on ? 'on' : ''}" data-a="mod" data-v="${i}:${kind}:${idx}" title="${label}"><i style="background:${sw}"></i><small>${label}</small></button>`;
+  const paints = PAINTS.map((p, k) => chip('paint', k, p[0], p[1] == null ? 'linear-gradient(135deg,#ccc,#777)' : p[1] === 'k' ? '#15161a' : p[1] === 'w' ? '#f4f4f0' : p[1] === 's' ? '#b9bcc6' : `hsl(${p[1] + 38},85%,52%)`, (m.paint || 0) === k)).join('');
+  const lights = LIGHTS.map((l, k) => chip('light', k, l[0], l[1], (m.light || 0) === k)).join('');
+  const html = `<div class="cust"><h4>Bodykit</h4><button class="chipm wide ${m.wide ? 'on' : ''}" data-a="mod" data-v="${i}:wide:${m.wide ? 0 : 1}"><i>🏁</i><small>${m.wide ? 'Widebody fitted ✓ (tap to remove)' : 'Widebody kit · ' + fmt(wideCost)}</small></button>
+    <h4>Paint · ${fmt(paintCost)} per respray</h4><div class="chips2">${paints}</div><h4>Headlights · ${fmt(lightCost)}</h4><div class="chips2">${lights}</div><small class="cm">Mods raise your car's value and fame. Cash: ${fmt(S.cash)}</small></div>`;
+  if ($('modal').classList.contains('open')) $('modal').classList.remove('open');
+  showModal({ art: `<div class="prev">${carArt(a, 150)}</div>`, title: 'Customize ' + a.n, text: html, buttons: [{ t: 'Done' }] });
+}
+
 const sellValue = (a) => a.value * 0.9 * (0.5 + cond(a) / 200);
 const assetWorth = (a) => a.value * (0.6 + 0.4 * cond(a) / 100);
 function gearMul(k) { return S.assets.reduce((m, a) => { const it = findItem(a.cat, a.n); return it && it.fx && it.fx[k] && cond(a) > 20 ? m * it.fx[k] : m; }, 1); }
@@ -125,10 +150,10 @@ const ACTS = {
     if (S.partner) S.partner.score = clamp(S.partner.score + 6);
     if (chance(0.2)) { a.cond = Math.max(0, cond(a) - 5); m += ' Things got messy.'; } else if (chance(0.1)) { S.fame += 2; m += ' A celebrity showed up and everyone posted about it!'; }
     return m; } },
+  custom: { icon: '🔧', t: 'Customize', toggle: true, cost: () => 0, run(a) { openCustom(S.assets.indexOf(a)); return null; } },
   rent: { icon: '🏷️', t: a => a.rented ? 'Stop renting out' : 'Rent it out', toggle: true, cost: () => 0, run(a) {
     a.rented = !a.rented; const r = Math.round(a.price * RENT[a.cat]);
     return a.rented ? `Your ${a.n} is now rented out for about ${fmt(r)} a year${a.cat === 'home' ? '. You will pay rent yourself unless you own another home' : ''}.` : `You took your ${a.n} off the rental market.`; } },
-  drive3d: { icon: '🕹️', t: 'Open-world drive', toggle: true, cost: () => 0, run(a) { Drive.open(a); return null; } },
   service: { icon: '🔧', t: a => ({ car: 'Service', boat: 'Refit', plane: 'Overhaul' }[a.cat] || 'Maintain'), cost: a => a.price * ({ plane: 0.04, boat: 0.035 }[a.cat] || 0.03), run(a) { a.cond = Math.min(100, cond(a) + 30); return `Your ${a.n} is in great shape again.`; } },
   roadtrip: { icon: '🛣️', t: 'Road trip', cost: a => 100 + a.price * 0.004, run(a) {
     S.happy = clamp(S.happy + 5); S.trips++; a.cond = Math.max(0, cond(a) - 3);
@@ -628,7 +653,7 @@ function stuffHTML() {
       const d = ACTS[id], cost = Math.round(d.cost(a)), why = !d.toggle && used[id] ? 'Done this year' : S.cash < cost ? 'Need ' + fmt(cost) : S.jail ? 'In prison' : '';
       return `<button class="mini" ${why ? 'disabled title="' + why + '"' : ''} data-a="itemAct" data-v="${i}:${id}">${d.icon} ${actLabel(id, a)}${cost ? ' ' + fmt(cost) : ''}</button>`;
     }).join('');
-    h += `<div class="card item"><div class="row nobg"><span class="ic">${itemArt(a.cat, it, 52)}</span><div class="grow"><b>${a.n}</b> ${a.rented ? '<i class="tag">Rented out</i>' : ''}
+    h += `<div class="card item"><div class="row nobg"><span class="ic">${carArt(a, 52)}</span><div class="grow"><b>${a.n}</b> ${a.rented ? '<i class="tag">Rented out</i>' : ''}
       <small>Worth ${fmt(a.value)} · ${a.up ? 'upkeep ' + fmt(a.price * a.up) + '/yr' : 'no upkeep'}${a.cat === 'pet' ? ' · bond ' + Math.round(a.bond == null ? 50 : a.bond) + ' · age ' + (a.age || 0) : ''}</small>
       ${DECAY[a.cat] ? `<div class="sb"><label>Condition</label><div class="bar"><i style="width:${c}%;background:${hcol(c)}"></i></div><b>${Math.round(c)}</b></div>` : ''}${it.perk ? `<span class="perk">${it.perk}</span>` : ''}</div></div>
       <div class="btns">${btns}<button class="mini" ${a.cat === 'pet' ? 'disabled' : ''} data-a="sellAsset" data-v="${i}">💵 Sell ${fmt(sellValue(a))}</button></div></div>`;
@@ -746,9 +771,20 @@ const A = {
       S.assets.push({ cat: UI.cat, n: it.n, icon: it.icon, price: it.price, up: it.up, dep: it.dep, value: it.price, cond: 100, used: {}, age: 0, bond: 50 });
       S.happy = clamp(S.happy + it.happy); S.fame += it.fame || 0; S.looks = clamp(S.looks + (it.looks || 0));
       say(it.icon, `You bought a ${it.n} for ${fmt(it.price)}.`, 'gold'); toast(`Bought ${it.n}. Find it in My stuff.`);
-      if (it.n === 'Lamborghini') { const car = S.assets[S.assets.length - 1]; showModal({ icon: '🏎️', title: 'Your Lamborghini!', text: 'It is yellow, loud and yours. Take it for a spin in the open-world city?', buttons: [{ t: '🕹️ Drive in 3D', cls: 'gold', fn: () => setTimeout(() => Drive.open(car), 150) }, { t: 'Later' }] }); }
     }
     checkAch(); save(); refresh(); renderFeed();
+  },
+  mod(v) {
+    const [i, kind, val] = v.split(':'), a = S.assets[+i]; if (!a || S.jail) return; const m = a.mods = a.mods || {}, x = +val;
+    if (kind === 'wide') {
+      if (x) { const c = Math.round(a.price * 0.12); if (S.cash < c) return toast('Need ' + fmt(c)); S.cash -= c; m.wide = 1; a.value += c * 0.6; S.fame += 0.3; S.happy = clamp(S.happy + 3); say('🏁', `Widebody kit fitted on your ${a.n}. It looks mean.`, 'gold'); }
+      else { m.wide = 0; a.value = Math.max(a.price * 0.2, a.value - Math.round(a.price * 0.12) * 0.6); }
+    } else if (kind === 'paint') {
+      if ((m.paint || 0) === x) return; const c = x ? Math.max(1000, Math.round(a.price * 0.015)) : 0; if (S.cash < c) return toast('Need ' + fmt(c)); S.cash -= c; m.paint = x; if (x) { a.value += c * 0.3; S.happy = clamp(S.happy + 1); say('🎨', `Your ${a.n} is now ${PAINTS[x][0]}.`, ''); }
+    } else if (kind === 'light') {
+      if ((m.light || 0) === x) return; const c = x ? Math.max(500, Math.round(a.price * 0.005)) : 0; if (S.cash < c) return toast('Need ' + fmt(c)); S.cash -= c; m.light = x; if (x) { a.value += c * 0.3; say('💡', `New ${LIGHTS[x][0]} headlights on your ${a.n}.`, ''); }
+    }
+    S.done.item = true; save(); refresh(); renderFeed(); openCustom(+i);
   },
   sellAsset(i) { const a = S.assets[i]; if (!a) return; const v = sellValue(a); S.cash += v; say(a.icon, `You sold your ${a.n} for ${fmt(v)}.`, ''); S.assets.splice(i, 1); save(); refresh(); renderFeed(); },
   itemAct(v) {
@@ -822,15 +858,6 @@ const A = {
 };
 
 Object.assign(A, SA, HA);
-
-// Called by drive.js when the open-world drive ends: a short joy-ride summary, no score.
-window.driveFinished = function (a, r) {
-  const km = (r.dist || 0) / 1000, mins = Math.max(1, Math.round((r.time || 0) / 60));
-  S.happy = clamp(S.happy + (r.time > 20 ? 3 : 1));
-  if (a && r.crashes) a.cond = Math.max(0, cond(a) - r.crashes * 2);
-  say('🏎️', `You took your ${a ? a.n : 'car'} for a ${mins}-minute spin: ${km.toFixed(1)} km, top speed ${r.top || 0} km/h${r.crashes ? `, ${r.crashes} bump${r.crashes === 1 ? '' : 's'}` : ', not a scratch'}.`);
-  toast('Back from the drive.'); S.done.item = true; save(); refresh(); renderFeed();
-};
 
 /* ---------- immersive contract signing ---------- */
 const REP_LINES = {
