@@ -248,3 +248,8 @@ body.ui-art .lic, body.ui-art .trophy span { font-size: 0; }
 body.celeb .profile { border-color: #fff1a6; box-shadow: 0 0 18px #f5c54299, inset 0 0 12px #f5c54233; }
 body.celeb .avatar { box-shadow: 0 0 0 3px #fff1a6, 0 0 14px #f5c542; }
 body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
+
+/* AGE button must sit above any open panel */
+.tabs { position: relative; z-index: 10; }
+.tabs .age { position: relative; z-index: 11; }
+.avatar .art { border-radius: 50%; }

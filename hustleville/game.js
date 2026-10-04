@@ -52,6 +52,15 @@ function art(key, idx, B, fb) {
   const cx = ((idx % a.cols) + 0.5) * a.A / a.cols, cy = (Math.floor(idx / a.cols) + 0.5) / a.rows;
   return `<span class="art" style="width:${B}px;height:${B}px;background-image:url(${a.src});background-size:${a.A * k}px ${k}px;background-position:${B / 2 - cx * k}px ${B / 2 - cy * k}px"></span>`;
 }
+// Avatar crop: zoom into the head and shoulders so the face fills the circle.
+function avatarArt(idx, B, fb) {
+  const a = ART.stages;
+  if (!a || !a.ok) return fb;
+  const zoom = [0.4, 0.58, 0.62, 0.62, 0.62, 0.62, 0.62, 0.52][idx] || 0.62, dy = [0.5, 0.45, 0.44, 0.44, 0.44, 0.44, 0.42, 0.5][idx] || 0.44;
+  const s = zoom / a.rows, k = B / s;
+  const cx = ((idx % a.cols) + 0.5) * a.A / a.cols, cy = (Math.floor(idx / a.cols) + dy) / a.rows;
+  return `<span class="art" style="width:${B}px;height:${B}px;border-radius:50%;background-image:url(${a.src});background-size:${a.A * k}px ${k}px;background-position:${B / 2 - cx * k}px ${B / 2 - cy * k}px"></span>`;
+}
 function stageIdx() {
   if (!S.alive) return 7;
   if (netWorth() >= 1e9 || S.fame >= 80) return 6;
@@ -392,7 +401,7 @@ function metersHTML() {
 function refresh() {
   if (!S) return;
   const t = statusTitle();
-  $('avatar').innerHTML = art('stages', stageIdx(), 44, stageIcon());
+  $('avatar').innerHTML = avatarArt(stageIdx(), 44, stageIcon());
   $('pname').textContent = S.name;
   $('psub').textContent = `${S.flag} Age ${S.age} · ${occupation()}`;
   $('cash').textContent = fmt(S.cash);
