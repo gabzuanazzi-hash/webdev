@@ -51,6 +51,13 @@ const Garage = (() => {
     if (!wrapsP) wrapsP = Promise.all([fetchImg(DIR + 'wheels.webp').then(im => { WHL = im; }).catch(() => {})].concat(WRAPS.map(async (w, i) => { if (!w.f) return; try { WR[i] = { img: await fetchImg(DIR + w.f), cache: {} }; } catch (e) { /* missing wrap art: skipped */ } })));
     return wrapsP;
   }
+  function wrapMask(v) {                                            // cleaned wrap area: body mask, eroded off the outline, minus dark trim / glass
+    if (v.wm) return v.wm; const w = v.w, h = v.h, n = w * h, a = new Uint8Array(n), t = new Uint8Array(n), o = new Uint8Array(n), R = 3;
+    for (let i = 0; i < n; i++) { const k = i * 4, g = v.pm[k + 1]; if (!g) continue; const lum = 0.3 * v.px[k] + 0.59 * v.px[k + 1] + 0.11 * v.px[k + 2], sh = v.pm[k]; a[i] = (lum < 38 || sh < 34) ? 0 : g; }
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let m = 255; for (let d = -R; d <= R && m; d++) { const xx = x + d; if (xx < 0 || xx >= w) { m = 0; break; } const q = a[y * w + xx]; if (q < m) m = q; } t[y * w + x] = m; }
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let m = t[y * w + x]; for (let d = -R; d <= R && m; d++) { const yy = y + d; if (yy < 0 || yy >= h) { m = 0; break; } const q = t[yy * w + x]; if (q < m) m = q; } o[y * w + x] = m; }
+    return (v.wm = o);
+  }
   function wrapPixels(v, i) {                                       // wrap art stretched over the body-paint area of this variant, cached
     const W = WR[i]; if (!W) return null; if (W.cache[v.id]) return W.cache[v.id];
     if (!v.bb) { let x0 = 1e9, y0 = 1e9, x1 = 0, y1 = 0; for (let y = 0; y < v.h; y++) for (let x = 0; x < v.w; x++) if (v.pm[(y * v.w + x) * 4 + 1] > 100) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } v.bb = [x0, y0, x1 - x0 + 1, y1 - y0 + 1]; }
@@ -112,11 +119,11 @@ const Garage = (() => {
         data[k] = data[k] * (1 - a) + r * a; data[k + 1] = data[k + 1] * (1 - a) + g * a; data[k + 2] = data[k + 2] * (1 - a) + b * a;
       }
     }
-    const WP = m.wrap ? wrapPixels(v, m.wrap) : null;
+    const WP = m.wrap ? wrapPixels(v, m.wrap) : null, WM = WP ? wrapMask(v) : null;
     if (WP) {
       const matte = m.finish === 1;
       for (let y = 0; y < WP.bh; y++) for (let x = 0; x < WP.bw; x++) {
-        const px = WP.bx + x, py = WP.by + y, i = py * w + px, k = i * 4, mk = pm[k + 1]; if (!mk) continue;
+        const px = WP.bx + x, py = WP.by + y, i = py * w + px, k = i * 4, mk = WM[i]; if (!mk) continue;
         const R = pm[k]; let sh = Math.min(1.12, R / 150); sh = 0.2 + 0.9 * sh; if (matte) sh = 0.45 + 0.55 * sh;
         const hh = Math.max(0, (R - 150) / 105) * (matte ? 0.1 : 0.4), t = (y * WP.bw + x) * 4, a = Math.min(1, mk / 170);
         const r = WP.d[t] * sh * (1 - hh) + 255 * hh, g = WP.d[t + 1] * sh * (1 - hh) + 255 * hh, b = WP.d[t + 2] * sh * (1 - hh) + 255 * hh;
