@@ -472,3 +472,5 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 .stuffsq:hover{border-color:#f5c542}.stuffsq .se{font-size:38px}.stuffsq b{font-size:16px}.stuffsq small{opacity:.7;font-size:11px;text-align:center}
 .stuffsq em{position:absolute;right:10px;top:8px;font-style:normal;font-weight:700;background:#f5c542;color:#222;border-radius:99px;min-width:22px;padding:1px 7px;font-size:12px}
 .stuffback{margin:4px 0}
+
+.hud #btnSettings{flex:0 0 auto}

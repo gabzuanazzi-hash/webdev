@@ -547,7 +547,7 @@ const locked = () => S.jail > 0 ? `<div class="note bad">⛓️ You are in priso
 function renderPanel() {
   const hubOpen = UI.panel === 'money' && UI.sub.money === 'biz' && UI.hub != null && S.biz[UI.hub];
   const money = hubOpen ? (UI.src ? 'Sourcing' : HUBS[S.biz[UI.hub].id].name) : { jobs: 'Careers', biz: 'Business Empire', invest: 'Invest' }[UI.sub.money];
-  const T = { money: [money, moneyHTML], social: ['Social Media', socialHTML], love: ['Love & Family', loveHTML], shop: ['Asset Shop', shopHTML], crazy: ['Activities', crazyHTML], status: ['Life & Goals', statusHTML] }[UI.panel];
+  const T = { money: [money, moneyHTML], social: ['Social Media', socialHTML], love: ['Love & Family', loveHTML], shop: ['Asset Shop', shopHTML], crazy: ['Activities', crazyHTML], status: ['Life & Goals', statusHTML], pack: ['Backpack', stuffHTML], settings: ['Settings', settingsHTML] }[UI.panel];
   $('sheetTitle').textContent = T[0];
   const view = [UI.panel, UI.sub.money, UI.sub.social, UI.sub.crazy, UI.hub, UI.src ? (UI.src.sel ? 's2' : 's1') : 0, UI.startOpen, UI.sub.shop, UI.cat, UI.stuff].join('|');
   const y = view === renderPanel.last ? $('sheetBody').scrollTop : 0;
@@ -756,6 +756,9 @@ function crazyHTML() {
   }).join('');
 }
 
+function settingsHTML() {
+  return `<div class="card"><b>${S.name}</b><br><small>Age ${S.age} · ${S.flag} ${S.country}</small></div><h5>Life</h5><button class="btn sm bad" data-a="restart">Start a new life</button><h5>Game</h5><small>Progress saves automatically on this device.</small>`;
+}
 function lifeTiles() {
   const homeIdx = S.assets.filter(a => a.cat === 'home').reduce((m, a) => Math.max(m, ASSETS.home.items.findIndex(x => x.n === a.n)), -1);
   return [
@@ -780,7 +783,7 @@ function statusHTML() {
     <h5>Milestones ${S.ach.length}/${ACH.length}</h5>
     <div class="trophies">${ACH.map(a => { const u = S.ach.includes(a.id); return `<div class="trophy ${u ? '' : 'lockd'}"><span style="background-image:url(assets/runway/ui/${u ? 'trophy' : 'trophy-lock'}.png)">${u ? '🏆' : '🔒'}</span>${a.t.split(' — ')[0]}</div>`; }).join('')}</div>
     <h5>Stats</h5>${bar('👑 Fame', S.fame, 'y')}${bar('⚡ Power', power, 'b')}${bar('😊 Happy', S.happy, 'g')}${bar('🧠 Smarts', S.smarts, 'b')}${bar('✨ Looks', S.looks, 'y')}${bar('❤️ Health', S.health, 'r')}
-    <h5>Life</h5><button class="btn sm bad" data-a="restart">Start a new life</button>`;
+`;
 }
 
 /* ---------- actions ---------- */
@@ -1026,6 +1029,7 @@ document.addEventListener('click', (e) => {
 $('ageBtn').addEventListener('click', ageUp);
 $('hero').addEventListener('click', tap);
 $('btnGear').addEventListener('click', () => { if (S) openPanel('status'); });
+$('btnSettings').addEventListener('click', () => { if (S) openPanel('settings'); });
 $('sheetClose').addEventListener('click', closePanel);
 $('btnNew').addEventListener('click', () => { newLife(); $('title').classList.remove('open'); renderFeed(); refresh(); });
 $('btnCont').addEventListener('click', () => { $('title').classList.remove('open'); renderFeed(); refresh(); });
