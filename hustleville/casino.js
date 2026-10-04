@@ -48,14 +48,18 @@ function rouWins(kind, n) {
     case 'low': return n <= 18; case 'high': return n >= 19; case 'd1': return n <= 12; case 'd2': return n > 12 && n <= 24; default: return n > 24;
   }
 }
+const rouTotal = () => Object.values(casU().rb || {}).reduce((s, x) => s + x, 0);
 function rouHTML() {
-  const u = casU(), c = casS(), off = u.busy || S.jail || casBet() <= 0 ? 'disabled' : '';
-  const numBtns = Array.from({ length: 36 }, (_, i) => i + 1).map(n => `<button class="rn ${RED_NUMS.has(n) ? 'r' : 'b'}" ${off} data-a="rouSpin" data-v="n${n}">${n}</button>`).join('');
+  const u = casU(), c = casS(), rb = u.rb || (u.rb = {}), tot = rouTotal(), lock = u.busy || S.jail, off = lock ? 'disabled' : '';
+  const mk = (k) => rb[k] ? `<i class="mk" style="background:${(CHIP_COL[CAS_CHIPS.slice().reverse().find(d => d <= rb[k]) || 100] || CHIP_COL[100])[0]}">${fmt(rb[k])}</i>` : '';
+  const numBtns = Array.from({ length: 36 }, (_, i) => i + 1).map(n => `<button class="rn ${RED_NUMS.has(n) ? 'r' : 'b'} ${rb['n' + n] ? 'has' : ''}" ${off} data-a="rouPlace" data-v="n${n}">${n}${mk('n' + n)}</button>`).join('');
   return `<div class="rouwrap"><div class="rouptr">▼</div>${rouWheel().replace('class="rouwheel"', `class="rouwheel" style="--ang:${u.shown}deg"`)}</div>
-    <div class="casmsg">${u.busy ? '🎡 No more bets…' : u.msg || 'Pick a bet — it plays with your selected chip.'}</div>
+    <div class="casmsg">${u.busy ? '🎡 No more bets…' : u.msg || 'Tap the table to stack chips on as many spots as you like, then spin.'}</div>
     <div class="rhist">${c.rou.map(n => `<i class="${n === 0 ? 'g' : RED_NUMS.has(n) ? 'r' : 'b'}">${n}</i>`).join('')}</div>
-    <h5>Outside bets</h5><div class="rbets">${ROU_BETS.map(([k, l, m]) => `<button ${off} data-a="rouSpin" data-v="${k}">${l}<small>pays ${m}:1</small></button>`).join('')}</div>
-    <h5>Single number · pays 35:1</h5><div class="rgrid"><button class="rn g" ${off} data-a="rouSpin" data-v="n0">0</button>${numBtns}</div>`;
+    <div class="rctl"><button class="btn sm" ${lock || !u.hist || !u.hist.length ? 'disabled' : ''} data-a="rouUndo">↩ Undo</button><button class="btn sm" ${lock || !tot ? 'disabled' : ''} data-a="rouClear">🗑 Clear</button><button class="btn sm" ${lock || !u.last || !Object.keys(u.last).length ? 'disabled' : ''} data-a="rouRebet">🔁 Rebet</button></div>
+    <button class="gbtn rspin" ${lock || !tot || tot > S.cash ? 'disabled' : ''} data-a="rouSpin">${tot ? `SPIN · ${fmt(tot)} on ${Object.keys(rb).length} spot${Object.keys(rb).length > 1 ? 's' : ''}` : 'PLACE A BET TO SPIN'}</button>
+    <h5>Pick your numbers · pays 35:1</h5><div class="rgrid"><button class="rn g ${rb.n0 ? 'has' : ''}" ${off} data-a="rouPlace" data-v="n0">0${mk('n0')}</button>${numBtns}</div>
+    <h5>Outside bets</h5><div class="rbets">${ROU_BETS.map(([k, l, m]) => `<button class="${rb[k] ? 'has' : ''}" ${off} data-a="rouPlace" data-v="${k}">${l}<small>pays ${m}:1</small>${mk(k)}</button>`).join('')}</div>`;
 }
 
 /* ---------- blackjack ---------- */
@@ -162,10 +166,10 @@ function casinoHTML() {
   const u = casU(), c = casS();
   const gm = [['rou', '🎡 Roulette'], ['bj', '🃏 Blackjack'], ['spt', '🏟️ Sports']];
   return `<div class="casbanner" style="background-image:url(assets/casino/${{ rou: 'roulette', bj: 'blackjack', spt: 'sports' }[u.game]}.webp)"><span>${gm.find(g => g[0] === u.game)[1]}</span></div>
-    <div class="stats3"><div><b>${fmt(S.cash)}</b><small>wallet</small></div><div><b class="${c.net < 0 ? 'bad' : 'good'}">${c.net < 0 ? '−' : '+'}${fmt(Math.abs(c.net))}</b><small>net result</small></div><div><b>${fmt(casBet())}</b><small>bet size</small></div></div>
+    <div class="stats3"><div><b>${fmt(S.cash)}</b><small>wallet</small></div><div><b class="${c.net < 0 ? 'bad' : 'good'}">${c.net < 0 ? '−' : '+'}${fmt(Math.abs(c.net))}</b><small>net result</small></div><div><b>${fmt(casBet())}</b><small>chip size</small></div></div>
     <div class="subtabs cas">${gm.map(([k, l]) => `<button class="${u.game === k ? 'on' : ''}" data-a="casGame" data-v="${k}">${l}</button>`).join('')}</div>
     <div class="chiprack">${CAS_CHIPS.map(v => `<button class="chipb ${u.bet === v ? 'on' : ''}" ${S.cash < v ? 'disabled' : ''} data-a="casChip" data-v="${v}" title="${fmt(v)}">${chipSvg(v, 44)}<small>${fmt(v)}</small></button>`).join('')}<button class="chipb ${u.bet === Math.floor(S.cash) && S.cash > 0 ? 'on' : ''}" ${S.cash < 1 ? 'disabled' : ''} data-a="casChip" data-v="${Math.max(1, Math.floor(S.cash))}" title="All in">${chipSvg('all', 44)}<small>ALL IN</small></button></div>
-    <div class="betbox"><div class="betlbl"><small>YOUR BET</small><b>${fmt(casBet())}</b></div>${betStack(casBet())}</div>
+    <div class="betbox"><div class="betlbl"><small>${u.game === 'rou' ? 'ON THE TABLE' : 'YOUR BET'}</small><b>${fmt(u.game === 'rou' ? rouTotal() : casBet())}</b></div>${betStack(u.game === 'rou' ? rouTotal() : casBet())}</div>
     ${{ rou: rouHTML, bj: bjHTML, spt: sportsHTML }[u.game]()}
     <div class="note">Play money only. The house always has an edge — roulette has a 2.7% edge, bookmakers keep ~8%.</div>`;
 }
@@ -173,17 +177,30 @@ function casinoHTML() {
 const CASINO_ACTS = {
   casGame(v) { casU().game = v; refresh(); },
   casChip(v) { casU().bet = +v; casClick(); refresh(); },
-  rouSpin(kind) {
-    const u = casU(), c = casS(), b = casBet(); if (u.busy || S.jail || b <= 0 || S.cash < b) return;
-    casClick(900); S.cash -= b; c.net -= b; const n = Math.floor(Math.random() * 37), i = WHEEL_ORDER.indexOf(n), mult = kind[0] === 'n' ? 35 : ROU_BETS.find(x => x[0] === kind)[2], win = rouWins(kind, n);
+  rouPlace(kind) {
+    const u = casU(), rb = u.rb || (u.rb = {}); if (u.busy || S.jail) return;
+    const free = Math.floor(S.cash) - rouTotal(), amt = Math.min(u.bet, free); if (amt <= 0) return;
+    rb[kind] = (rb[kind] || 0) + amt; (u.hist = u.hist || []).push([kind, amt]); casClick(1500); refresh();
+  },
+  rouUndo() { const u = casU(), h = u.hist || [], x = h.pop(); if (!x || u.busy) return; u.rb[x[0]] -= x[1]; if (u.rb[x[0]] <= 0) delete u.rb[x[0]]; casClick(800); refresh(); },
+  rouClear() { const u = casU(); if (u.busy) return; u.rb = {}; u.hist = []; refresh(); },
+  rouRebet() {
+    const u = casU(); if (u.busy || !u.last) return; u.rb = {}; u.hist = []; let left = Math.floor(S.cash);
+    for (const [k, v] of Object.entries(u.last)) { const x = Math.min(v, left); if (x > 0) { u.rb[k] = x; u.hist.push([k, x]); left -= x; } }
+    casClick(1500); refresh();
+  },
+  rouSpin() {
+    const u = casU(), c = casS(), rb = u.rb || {}, tot = rouTotal(); if (u.busy || S.jail || !tot || tot > S.cash) return;
+    casClick(900); S.cash -= tot; c.net -= tot; const n = Math.floor(Math.random() * 37), i = WHEEL_ORDER.indexOf(n);
+    const bets = Object.entries(rb); u.last = { ...rb }; u.rb = {}; u.hist = [];
     u.busy = true; u.ang = Math.ceil(u.shown / 360) * 360 + 1800 - i * (360 / 37);
     save(); refresh();
     requestAnimationFrame(() => { const w = document.getElementById('rouWheel'); if (!w) return; w.getBoundingClientRect(); w.style.transition = 'transform 2.6s cubic-bezier(.12,.6,.1,1)'; w.style.transform = `rotate(${u.ang}deg)`; });
     setTimeout(() => {
-      const pay = win ? b * (mult + 1) : 0; S.cash += pay; c.net += pay; u.busy = false; u.shown = u.ang;
-      c.rou.unshift(n); c.rou.length = Math.min(c.rou.length, 14);
-      u.msg = `${RED_NUMS.has(n) ? '🔴' : n === 0 ? '🟢' : '⚫'} ${n} — ${win ? `you win ${fmt(b * mult)}!` : `you lose ${fmt(b)}.`}`;
-      casNote('Roulette', pay - b); save(); refresh(); renderFeed();
+      let pay = 0; bets.forEach(([k, amt]) => { if (rouWins(k, n)) pay += amt * ((k[0] === 'n' ? 35 : ROU_BETS.find(x => x[0] === k)[2]) + 1); });
+      S.cash += pay; c.net += pay; u.busy = false; u.shown = u.ang; c.rou.unshift(n); c.rou.length = Math.min(c.rou.length, 14);
+      const net = pay - tot; u.msg = `${RED_NUMS.has(n) ? '🔴' : n === 0 ? '🟢' : '⚫'} ${n} — ${net > 0 ? `you win ${fmt(net)}!` : net === 0 ? 'you break even.' : `you lose ${fmt(-net)}.`}`;
+      casNote('Roulette', net); save(); refresh(); renderFeed();
     }, 2700);
   },
   bjDeal() {

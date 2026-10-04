@@ -374,3 +374,8 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 @keyframes chipdrop{from{transform:translateY(-26px) scale(1.15);opacity:0}to{transform:none;opacity:1}}
 .chips2{display:none}
 .chiprack{justify-content:space-between;overflow-x:auto}.chipb{padding:2px 1px}
+
+.rctl{display:flex;gap:6px;justify-content:center;margin:6px 0}.rspin{width:100%;margin:4px 0 8px}
+.rbets button,.rgrid .rn{position:relative}.rbets button.has,.rn.has{outline:2px solid #f5c542}
+.mk{position:absolute;right:-3px;top:-6px;font-style:normal;font-size:9px;font-weight:700;line-height:1;padding:3px 4px;border-radius:9px;border:1.5px dashed #fff;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.6);pointer-events:none;z-index:2}
+.rgrid .rn .mk{font-size:8px;padding:2px 3px;right:-4px;top:-8px}
