@@ -117,7 +117,7 @@ const ASSETS = {
     I('Luxury SUV', '🚘', 85000, { up: 0.06, dep: -0.14, happy: 4, fame: 1, sp: 2 }),
     I('Sports Coupe', '🏎️', 160000, { up: 0.05, dep: -0.1, happy: 6, fame: 2, sp: 3 }),
     I('Classic Muscle Car', '🚓', 180000, { up: 0.05, dep: 0.03, vol: 0.05, happy: 6, fame: 1 }),
-    I('Lamborghini', '🏎️', 420000, { up: 0.04, dep: -0.06, happy: 8, fame: 4, sp: 4 }),
+    I('Lamborghini', '🏎️', 420000, { up: 0.04, dep: -0.06, happy: 8, fame: 4, sp: 4, acts: ['drive3d', 'service', 'roadtrip', 'race'] }),
     I('Rolls-Royce', '🚘', 450000, { up: 0.04, dep: -0.05, happy: 8, fame: 4 }),
     I('Bugatti Chiron', '🏁', 3400000, { up: 0.03, dep: 0, happy: 12, fame: 8, sp: 5 })
   ] },

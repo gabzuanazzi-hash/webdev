@@ -276,3 +276,25 @@ body.celeb .hud { background: linear-gradient(#3b2a00, #0b1b36); }
 .can { font-size: .58rem; color: var(--mint); line-height: 1.3; }
 .card.item .btns .mini { flex: 0 0 auto; font-size: .72rem; padding: 5px 9px; }
 .card.item .btns .mini:disabled { opacity: .4; }
+
+/* ---- 3D drive ---- */
+.drive { position: fixed; inset: 0; z-index: 60; background: #050a18; transform: translateY(105%); transition: transform .55s cubic-bezier(.2, .9, .2, 1); visibility: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+.drive.open { transform: none; }
+.drive canvas#dvCanvas { width: 100%; height: 100%; display: block; }
+.dv-top { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 12px; pointer-events: none; }
+.dv-speed { font-family: var(--title); color: #fff; text-shadow: 0 2px 0 #000; } .dv-speed b { font-size: 2.6rem; line-height: 1; } .dv-speed small { margin-left: 4px; font-size: .8rem; color: var(--gold); }
+.dv-mid { text-align: center; font-family: var(--title); color: #fff; text-shadow: 0 2px 0 #000; } .dv-time { font-size: 2rem; line-height: 1; } .dv-time.low { color: #ff6a5a; animation: blink .5s infinite alternate; } @keyframes blink { to { opacity: .4; } }
+.dv-coins { font-size: 1.3rem; color: var(--gold); } .dv-coins b.pop { display: inline-block; animation: coinpop .3s; } @keyframes coinpop { 50% { transform: scale(1.5); } }
+.dv-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; pointer-events: auto; } .dv-right canvas { width: 96px; height: 96px; border: 2px solid var(--gold); border-radius: 12px; background: #12182b; }
+.dv-exit { font: 600 .8rem Fredoka, sans-serif; background: #0a1730e0; color: var(--ink); border: 2px solid var(--line); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.dv-boost { position: absolute; left: 50%; top: 66px; transform: translateX(-50%); width: 120px; height: 12px; background: #0a1730b0; border: 2px solid #ffffff55; border-radius: 8px; overflow: hidden; pointer-events: none; }
+.dv-boost i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #ff7a59, #ffc83d); } .dv-boost span { position: absolute; inset: 0; display: grid; place-items: center; font: .55rem var(--title); color: #fff; letter-spacing: .1em; text-shadow: 0 1px 0 #000; }
+.dv-flash { position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 120px 30px #ff3a2a; opacity: 0; } .dv-flash.hit { animation: hit .5s; } @keyframes hit { 0% { opacity: .9; } 100% { opacity: 0; } }
+.dv-help { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); padding: 6px 14px; border-radius: 999px; background: #0a1730d0; color: var(--ink); font-size: .78rem; transition: opacity .6s; pointer-events: none; text-align: center; max-width: 90%; } .dv-help.gone { opacity: 0; }
+.dv-pad { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; align-items: flex-end; padding: 10px 14px calc(14px + env(safe-area-inset-bottom)); pointer-events: none; }
+.dv-pad button { pointer-events: auto; touch-action: none; width: 64px; height: 64px; margin: 0 4px; border-radius: 50%; border: 3px solid #ffffffaa; background: #0a1730a8; color: #fff; font: 1.3rem var(--title); cursor: pointer; }
+.dv-pad button.on { background: #f5c542cc; color: #4a2800; } .dv-pad .g { width: 84px; height: 84px; background: #1d8a4acc; } .dv-pad .b { background: #ff7a59a8; }
+.dv-lr, .dv-bt { display: flex; align-items: flex-end; }
+.dv-end { position: absolute; inset: 0; display: grid; place-items: center; background: #000a; } .dv-end[hidden] { display: none; }
+.dv-card { width: min(86%, 340px); padding: 22px; text-align: center; border: 4px solid var(--gold); border-radius: 22px; background: linear-gradient(#173a6c, #0f2a4e); } .dv-card h3 { font: 1.6rem var(--title); color: var(--gold); margin-bottom: 8px; } .dv-card p { margin-bottom: 14px; line-height: 1.6; }
+@media (min-width: 760px) { .dv-pad { opacity: .75; } }
